@@ -1,0 +1,23 @@
+{{- with .Values.roots }}
+{{- if .enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nico-roots
+  namespace: {{ $.Values.namespaces.nico }}
+spec:
+  secretName: nico-roots
+  commonName: nico-roots.{{ $.Values.namespaces.nico }}.svc.cluster.local
+  dnsNames:
+    - nico-roots.{{ $.Values.namespaces.nico }}.svc.cluster.local
+  duration: {{ .duration }}
+  renewBefore: {{ .renewBefore }}
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ $.Values.issuer.name }}
+    group: cert-manager.io
+{{- end }}
+{{- end }}

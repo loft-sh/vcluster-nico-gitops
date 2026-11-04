@@ -17,6 +17,10 @@ vault:
     authDelegator: true
 issuer:
   name: vault-nico-issuer
+roots:
+  enabled: true
+  duration: 720h
+  renewBefore: 360h
 postgres:
   enabled: true
   image: postgres:14.5-alpine
