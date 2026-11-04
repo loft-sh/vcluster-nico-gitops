@@ -60,7 +60,7 @@ if ! exists nico-system ssh-host-key; then
   ssh-keygen -q -t ed25519 -N "" -C nico-ssh-console -f "$WORK/ssh_host_ed25519_key"
   k -n nico-system create secret generic ssh-host-key \
     --from-file=ssh_host_ed25519_key="$WORK/ssh_host_ed25519_key" \
-    --from-file=ssh_host_ed25519_key.pub="$WORK/ssh_host_ed25519_key.pub" >/dev/null
+    --from-file=ssh_host_ed25519_key_pub="$WORK/ssh_host_ed25519_key.pub" >/dev/null
   echo "created nico-system/ssh-host-key"
 fi
 
