@@ -12,7 +12,7 @@ permissions:
 jobs:
   site:
     name: ${{ matrix.env }}
-    runs-on: ubuntu-latest
+    runs-on: large-16_64
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -43,3 +43,61 @@ jobs:
       - name: Diagnostics
         if: failure()
         run: test/e2e/diagnostics.sh
+
+  full:
+    name: global and site
+    runs-on: large-16_64
+    timeout-minutes: 150
+    env:
+      BLUEPRINT_URL: https://github.com/${{ github.repository }}
+      BLUEPRINT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      BLUEPRINT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GIT_TOKEN: ${{ github.token }}
+      LICENSE_TOKEN: ${{ secrets.VCLUSTER_LICENSE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+      - uses: helm/kind-action@v1.15.2
+        with:
+          version: v0.33.0
+          install_only: true
+      - uses: fluxcd/flux2/action@v2.10.0
+        with:
+          version: 2.10.0
+      - name: Deploy global and site, register the site, check it connects
+        run: test/e2e/run-full.sh
+      - name: Diagnostics
+        if: failure()
+        run: |
+          for c in kind-nico-global kind-nico-site; do echo "=== $c"; kubectl config use-context $c; test/e2e/diagnostics.sh; done
+
+  argocd:
+    name: site with Argo CD
+    runs-on: large-16_64
+    timeout-minutes: 120
+    env:
+      BLUEPRINT_URL: https://github.com/${{ github.repository }}
+      BLUEPRINT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GIT_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+      - uses: helm/kind-action@v1.15.2
+        with:
+          version: v0.33.0
+          cluster_name: nico-e2e
+          config: test/e2e/kind.yaml
+      - name: Deploy the site with Argo CD and check it
+        run: test/e2e/run-argocd.sh
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n argocd get applications -o wide
+          test/e2e/diagnostics.sh
+

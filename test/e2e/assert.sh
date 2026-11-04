@@ -8,8 +8,13 @@ bad() { printf 'FAIL  %s: %s\n' "$1" "$2"; fail=1; }
 check() { local name=$1; shift; if out=$("$@" 2>&1); then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
 has() { local name=$1 want=$2; shift 2; out=$("$@" 2>&1); if echo "$out" | grep -q -- "$want"; then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
 
-for hr in cert-manager site-prereqs nico; do
-  check "HelmRelease $hr Ready" kubectl -n flux-system wait "helmrelease/$hr" --for=condition=Ready --timeout=60s
+MODE=${MODE:-flux}
+for app in cert-manager site-prereqs nico; do
+  if [ "$MODE" = argocd ]; then
+    check "Application $app Synced and Healthy" kubectl -n argocd wait "application/$app" --for=jsonpath='{.status.health.status}'=Healthy --timeout=60s
+  else
+    check "HelmRelease $app Ready" kubectl -n flux-system wait "helmrelease/$app" --for=condition=Ready --timeout=60s
+  fi
 done
 check "ClusterIssuer vault-nico-issuer Ready (cert-manager logs in to Vault)" \
   kubectl wait clusterissuer/vault-nico-issuer --for=condition=Ready --timeout=120s

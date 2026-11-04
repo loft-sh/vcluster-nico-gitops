@@ -1,0 +1,5 @@
+server:
+  frontend:
+    externalService:
+      annotations:
+        metallb.io/loadBalancerIPs: TEMPORAL_IP

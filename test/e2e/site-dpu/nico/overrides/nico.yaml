@@ -66,3 +66,5 @@ nico-api:
       repository = "ghcr.io/loft-sh/vcluster-platform-nico/transceiver-exporter"
 nico-pxe:
   bootArtifactContainers: []
+nico-dhcp:
+  replicas: 0

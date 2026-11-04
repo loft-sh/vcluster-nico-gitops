@@ -1,0 +1,4 @@
+insecureSkipVerify: true
+service:
+  annotations:
+    metallb.io/loadBalancerIPs: PLATFORM_IP

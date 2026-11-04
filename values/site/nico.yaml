@@ -28,6 +28,8 @@ nico-api:
     sslMode: disable
   externalService:
     enabled: false
+  legacyAlias:
+    enabled: false
 nico-pxe:
   bootArtifactContainers:
   - name: boot-artifacts-x86-64
@@ -44,3 +46,5 @@ nico-pxe:
     - sh
     - -c
     - set -e; cp -r /aarch64 /apt /forge-boot-artifacts/blobs/internal
+nico-dsx-exchange-consumer:
+  enabled: false
