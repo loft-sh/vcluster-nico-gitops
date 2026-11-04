@@ -31,7 +31,7 @@ rand() { openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c "${1:-32}"; }
 exists() { k -n "$1" get secret "$2" >/dev/null 2>&1; }
 
 for ns in nico-system nico-rest cert-manager; do
-  k create namespace "$ns" --dry-run=client -o yaml | k apply -f - >/dev/null
+  k get namespace "$ns" >/dev/null 2>&1 || k create namespace "$ns" >/dev/null
 done
 
 if exists nico-system nico-postgres-credentials; then
@@ -73,7 +73,7 @@ elif ! exists nico-system nico-vault-token; then
 fi
 
 if [ "$DPU" = true ]; then
-  k create namespace dpf-operator-system --dry-run=client -o yaml | k apply -f - >/dev/null
+  k get namespace dpf-operator-system >/dev/null 2>&1 || k create namespace dpf-operator-system >/dev/null
   if ! exists dpf-operator-system hbn-user-password; then
     k -n dpf-operator-system create secret generic hbn-user-password --from-literal=password="$(rand 10 | tr 'A-Z' 'a-z')" >/dev/null
     k -n dpf-operator-system label secret hbn-user-password dpu.nvidia.com/image-pull-secret="" >/dev/null

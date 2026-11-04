@@ -32,7 +32,7 @@ rand() { openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c "${1:-32}"; }
 exists() { k -n "$1" get secret "$2" >/dev/null 2>&1; }
 
 for ns in nico-rest temporal cert-manager vcluster-platform; do
-  k create namespace "$ns" --dry-run=client -o yaml | k apply -f - >/dev/null
+  k get namespace "$ns" >/dev/null 2>&1 || k create namespace "$ns" >/dev/null
 done
 
 if exists nico-rest postgres-credentials; then

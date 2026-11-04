@@ -53,7 +53,7 @@ done
 
 CACERT=$(kubectl --context "$GLOBAL" -n nico-rest get secret ca-signing-secret -o jsonpath='{.data.tls\.crt}' | base64 -d)
 
-kubectl --context "$SITE" create namespace nico-rest --dry-run=client -o yaml | kubectl --context "$SITE" apply -f - >/dev/null
+kubectl --context "$SITE" get namespace nico-rest >/dev/null 2>&1 || kubectl --context "$SITE" create namespace nico-rest >/dev/null
 kubectl --context "$SITE" -n nico-rest create secret generic site-registration \
   --from-literal=site-uuid="$SITE_ID" --from-literal=otp="$OTP" \
   --from-literal=creds-url="$CREDS" --from-literal=cacert="$CACERT" \
