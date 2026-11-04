@@ -34,6 +34,8 @@ done
 
 api() { curl -fsS -H "Authorization: Bearer $NICO_TOKEN" -H "Content-Type: application/json" "$@"; }
 
+api "$REST/v2/org/$ORG/nico/infrastructure-provider/current" >/dev/null
+
 SITE_ID=$(api "$REST/v2/org/$ORG/nico/site" | jq -r --arg n "$NAME" '[.[] | select(.name == $n)][0].id // empty')
 if [ -n "$SITE_ID" ]; then
   echo "site $NAME already exists: $SITE_ID"
