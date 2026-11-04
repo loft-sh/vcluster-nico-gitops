@@ -12,7 +12,7 @@ data:
       -v rest_password="$NICO_REST_PASSWORD" -v temporal_password="$TEMPORAL_PASSWORD" <<'SQL'
     SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', '{{ $p.nicoRest.user }}', :'rest_password')
     WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{{ $p.nicoRest.user }}')\gexec
-    SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', '{{ $p.temporal.user }}', :'temporal_password')
+    SELECT format('CREATE ROLE %I LOGIN CREATEDB PASSWORD %L', '{{ $p.temporal.user }}', :'temporal_password')
     WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{{ $p.temporal.user }}')\gexec
     SELECT 'CREATE DATABASE {{ $p.nicoRest.database }} OWNER {{ $p.nicoRest.user }}'
     WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $p.nicoRest.database }}')\gexec
