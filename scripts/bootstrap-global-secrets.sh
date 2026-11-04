@@ -65,6 +65,11 @@ fi
 
 if exists nico-rest ca-signing-secret; then
   echo "nico-rest/ca-signing-secret exists, keeping it"
+  if ! exists cert-manager ca-signing-secret; then
+    k -n nico-rest get secret ca-signing-secret -o json \
+      | jq '{apiVersion, kind, type, data, metadata: {name: .metadata.name, namespace: "cert-manager"}}' | k apply -f - >/dev/null
+    echo "restored cert-manager/ca-signing-secret from nico-rest"
+  fi
 else
   WORK=$(mktemp -d)
   trap 'rm -rf "$WORK"' EXIT
