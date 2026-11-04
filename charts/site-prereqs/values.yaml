@@ -11,6 +11,7 @@ vault:
     role: cert-manager
     controllerServiceAccount: cert-manager
     serviceAccount: cert-manager-vault
+    createServiceAccount: true
     audiences:
     - https://kubernetes.default.svc.cluster.local
     authDelegator: true
