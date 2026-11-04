@@ -1,0 +1,106 @@
+blueprint:
+  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+  targetRevision: v0.1.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/global/nico
+nico:
+  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
+  targetRevision: source/v2.4.0-vcluster.rc5.1
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories: []
+components:
+- name: cert-manager
+  releaseName: cert-manager
+  namespace: cert-manager
+  wave: 0
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.20.2
+  valueFiles:
+  - $env/{path}/overrides/cert-manager.yaml
+  values:
+    crds:
+      enabled: true
+- name: global-prereqs
+  releaseName: global-prereqs
+  namespace: nico-rest
+  wave: 1
+  source:
+    blueprint: true
+    path: charts/global-prereqs
+  valueFiles:
+  - $env/{path}/overrides/global-prereqs.yaml
+  settings:
+  - key: storageClass
+    path: postgres.storageClass
+- name: temporal
+  releaseName: temporal
+  namespace: temporal
+  wave: 2
+  source:
+    nico: true
+    path: rest-api/temporal-helm/temporal
+  valueFiles:
+  - values.yaml
+  - values-kind.yaml
+  - $blueprint/values/global/temporal.yaml
+  - $env/{path}/overrides/temporal.yaml
+- name: temporal-namespaces
+  releaseName: temporal-namespaces
+  namespace: temporal
+  wave: 3
+  source:
+    blueprint: true
+    path: charts/temporal-namespaces
+  valueFiles:
+  - $env/{path}/overrides/temporal-namespaces.yaml
+- name: nico-rest
+  releaseName: nico-rest
+  namespace: nico-rest
+  wave: 4
+  source:
+    nico: true
+    path: helm/rest/nico-rest
+  valueFiles:
+  - $blueprint/values/global/nico-rest.yaml
+  - $env/{path}/overrides/nico-rest.yaml
+  settings:
+  - key: platformOidcIssuer
+    path: nico-rest-api.config.issuers[0].issuer
+  - key: siteManagerHost
+    path: nico-rest-site-manager.certificate.dnsNames[5]
+- name: vcluster-platform
+  releaseName: vcluster-platform
+  namespace: vcluster-platform
+  wave: 1
+  source:
+    repoURL: https://charts.loft.sh
+    chart: vcluster-platform
+    targetRevision: 5.0.0-rc.1
+  valueFiles:
+  - $blueprint/values/global/vcluster-platform.yaml
+  - $env/{path}/overrides/vcluster-platform.yaml
+  settings:
+  - key: platformHost
+    path: config.loftHost
+- name: nico-provider
+  releaseName: nico-provider
+  namespace: vcluster-platform
+  wave: 5
+  source:
+    blueprint: true
+    path: charts/nico-provider
+  valueFiles:
+  - $env/{path}/overrides/nico-provider.yaml
+  settings:
+  - key: nicoOrg
+    path: org

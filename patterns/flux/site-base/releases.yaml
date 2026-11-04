@@ -1,0 +1,92 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: cert-manager
+  targetNamespace: cert-manager
+  storageNamespace: cert-manager
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.20.2
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  values:
+    crds:
+      enabled: true
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-overrides-cert-manager
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: site-prereqs
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: site-prereqs
+  targetNamespace: nico-system
+  storageNamespace: nico-system
+  chart:
+    spec:
+      chart: ./charts/site-prereqs
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultAddr
+    targetPath: vault.address
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultPkiMount
+    targetPath: vault.pkiMount
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultPkiRole
+    targetPath: vault.pkiRole
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultCertManagerAuthMount
+    targetPath: vault.certManager.authMount
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultCertManagerRole
+    targetPath: vault.certManager.role
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: storageClass
+    targetPath: postgres.storageClass
+  - kind: ConfigMap
+    name: blueprint-overrides-site-prereqs
+    valuesKey: values.yaml
+    optional: true

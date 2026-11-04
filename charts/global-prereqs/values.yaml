@@ -1,0 +1,28 @@
+namespaces:
+  nicoRest: nico-rest
+  temporal: temporal
+ca:
+  secretName: ca-signing-secret
+  issuerName: nico-rest-ca-issuer
+certificates:
+  duration: 720h
+  renewBefore: 360h
+siteManager:
+  external:
+    enabled: true
+    type: LoadBalancer
+    loadBalancerIP: ''
+    annotations: {}
+postgres:
+  enabled: true
+  image: postgres:14.5-alpine
+  storageClass: ''
+  size: 20Gi
+  credentialsSecret: postgres-credentials
+  nicoRest:
+    database: nico_rest
+    user: nico_rest
+  temporal:
+    database: temporal
+    visibilityDatabase: temporal_visibility
+    user: temporal

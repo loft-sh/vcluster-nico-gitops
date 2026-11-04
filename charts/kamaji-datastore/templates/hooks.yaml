@@ -1,0 +1,83 @@
+{{- $c := .Values.controller }}
+{{- $hook := "helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded" }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kamaji-datastore-bootstrap
+  namespace: {{ .Values.namespace }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,post-install,post-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kamaji-datastore-bootstrap
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,post-install,post-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: [{{ $c.webhookConfiguration | quote }}]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kamaji-datastore-bootstrap
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade,post-install,post-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kamaji-datastore-bootstrap
+subjects:
+  - kind: ServiceAccount
+    name: kamaji-datastore-bootstrap
+    namespace: {{ .Values.namespace }}
+{{- range $phase := list "relax" "restore" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kamaji-datastore-{{ $phase }}
+  namespace: {{ $.Values.namespace }}
+  annotations:
+    helm.sh/hook: {{ if eq $phase "relax" }}pre-install,pre-upgrade{{ else }}post-install,post-upgrade{{ end }}
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      serviceAccountName: kamaji-datastore-bootstrap
+      restartPolicy: OnFailure
+      containers:
+        - name: {{ $phase }}
+          image: {{ $.Values.kubectlImage }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              policy() {
+                idx=$(kubectl get validatingwebhookconfiguration {{ $c.webhookConfiguration }} -o json \
+                  | jq -r '.webhooks | to_entries[] | select(.value.name == "{{ $c.webhookName }}") | .key')
+                [ -n "$idx" ] || { echo "webhook {{ $c.webhookName }} not found"; exit 1; }
+                kubectl patch validatingwebhookconfiguration {{ $c.webhookConfiguration }} --type=json \
+                  -p "[{\"op\":\"replace\",\"path\":\"/webhooks/$idx/failurePolicy\",\"value\":\"$1\"}]"
+              }
+              {{- if eq $phase "relax" }}
+              policy Ignore
+              {{- else }}
+              kubectl -n {{ $.Values.namespace }} rollout status deployment/{{ $c.deployment }} --timeout=600s
+              policy Fail
+              {{- end }}
+{{- end }}

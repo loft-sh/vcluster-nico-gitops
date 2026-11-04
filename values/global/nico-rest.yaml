@@ -1,0 +1,56 @@
+global:
+  image:
+    repository: ghcr.io/loft-sh/vcluster-platform-nico
+    tag: v2.4.0-vcluster.rc5.1.g3d8bdad7
+  imagePullSecrets: []
+  certificate:
+    issuerRef:
+      kind: ClusterIssuer
+      name: nico-rest-ca-issuer
+      group: cert-manager.io
+nico-rest-common:
+  secrets:
+    create: false
+nico-rest-api:
+  config:
+    db:
+      host: postgres.nico-rest.svc.cluster.local
+      user: nico_rest
+      name: nico_rest
+    temporal:
+      serverName: server.temporal.local
+    issuers:
+    - name: vcluster-platform
+      origin: custom
+      jwks: http://loft.vcluster-platform.svc.cluster.local/oidc/keys
+      issuer: https://platform.example.com/oidc
+      audiences:
+      - http://nico-rest-api.nico-rest.svc.cluster.local:8388
+      claimMappings:
+      - orgAttribute: organization
+        orgDisplayAttribute: organization
+        rolesAttribute: roles
+nico-rest-db:
+  db:
+    host: postgres.nico-rest.svc.cluster.local
+    user: nico_rest
+    name: nico_rest
+nico-rest-workflow:
+  secrets:
+    dbCreds: db-creds
+  config:
+    db:
+      host: postgres.nico-rest.svc.cluster.local
+      user: nico_rest
+      name: nico_rest
+    temporal:
+      serverName: server.temporal.local
+nico-rest-site-manager:
+  certificate:
+    dnsNames:
+    - nico-rest-site-manager
+    - nico-rest-site-manager.nico-rest
+    - nico-rest-site-manager.nico-rest.svc
+    - nico-rest-site-manager.nico-rest.svc.cluster.local
+    - localhost
+    - site-manager.example.com

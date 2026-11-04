@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nico-site-base
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  sources:
+  - repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+    targetRevision: v0.1.0
+    path: patterns/argocd/site-base
+    helm:
+      valueFiles:
+      - $env/clusters/site-1/nico/settings.yaml
+      valuesObject:
+        blueprint:
+          repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+          targetRevision: v0.1.0
+        environment:
+          repoURL: https://github.com/example-org/nico-environments.git
+          targetRevision: main
+          path: clusters/site-1/nico
+  - repoURL: https://github.com/example-org/nico-environments.git
+    targetRevision: main
+    ref: env
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nico-site
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  sources:
+  - repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+    targetRevision: v0.1.0
+    path: patterns/argocd/site
+    helm:
+      valueFiles:
+      - $env/clusters/site-1/nico/settings.yaml
+      valuesObject:
+        blueprint:
+          repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+          targetRevision: v0.1.0
+        environment:
+          repoURL: https://github.com/example-org/nico-environments.git
+          targetRevision: main
+          path: clusters/site-1/nico
+  - repoURL: https://github.com/example-org/nico-environments.git
+    targetRevision: main
+    ref: env
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

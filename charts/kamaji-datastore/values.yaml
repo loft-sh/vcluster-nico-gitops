@@ -1,0 +1,12 @@
+namespace: dpf-operator-system
+name: default
+etcd:
+  serviceName: kamaji-etcd
+  replicas: 3
+  certsSecret: kamaji-etcd-certs
+  clientCertsSecret: kamaji-etcd-root-client-certs
+controller:
+  deployment: kamaji
+  webhookConfiguration: kamaji-validating-webhook-configuration
+  webhookName: vdatastore.kb.io
+kubectlImage: alpine/k8s:1.29.4

@@ -1,0 +1,21 @@
+server:
+  config:
+    persistence:
+      default:
+        sql:
+          host: postgres.nico-rest.svc.cluster.local
+          user: temporal
+          existingSecret: db-creds
+      visibility:
+        sql:
+          host: postgres.nico-rest.svc.cluster.local
+          user: temporal
+          existingSecret: db-creds
+  frontend:
+    externalService:
+      enabled: true
+      type: LoadBalancer
+      port: 7233
+      annotations: {}
+web:
+  enabled: false

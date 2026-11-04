@@ -1,0 +1,14 @@
+namespace: dpf-operator-system
+apiServer:
+  vip: ""
+  port: 6443
+osInstallTimeout: 90m
+highSpeedMTU: 9000
+dpuCluster:
+  name: carbide-dpf-cluster
+  maxNodes: 1000
+  keepalived:
+    interface: ""
+    vip: ""
+    virtualRouterID: 126
+    controlPlaneLabelValue: ""

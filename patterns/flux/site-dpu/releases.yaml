@@ -1,0 +1,269 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: argo-cd
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: argo-cd
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: argo-cd
+      version: 9.4.1
+      sourceRef:
+        kind: HelmRepository
+        name: argo
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-argo-cd
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-argo-cd
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kamaji
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: kamaji
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: kamaji
+      version: 1.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: nvidia-charts
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-kamaji
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-kamaji
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kamaji-datastore
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: kamaji-datastore
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: ./charts/kamaji-datastore
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: kamaji
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-overrides-kamaji-datastore
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: maintenance-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: maintenance-operator
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: maintenance-operator-chart
+      version: 0.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: mellanox
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-maintenance-operator
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-maintenance-operator
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-feature-discovery
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: node-feature-discovery
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: node-feature-discovery
+      version: 0.18.3
+      sourceRef:
+        kind: HelmRepository
+        name: nfd
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-node-feature-discovery
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-node-feature-discovery
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dpf-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: dpf-operator
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: dpf-operator
+      version: v26.4.0
+      sourceRef:
+        kind: HelmRepository
+        name: doca
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: argo-cd
+  - name: kamaji-datastore
+  - name: maintenance-operator
+  - name: node-feature-discovery
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-dpf-operator
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-dpf-operator
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dpf-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: dpf-config
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: ./charts/dpf-config
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: dpf-operator
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: dpfApiServerVip
+    targetPath: apiServer.vip
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: dpfApiServerPort
+    targetPath: apiServer.port
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: dpuClusterInterface
+    targetPath: dpuCluster.keepalived.interface
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: dpuClusterVip
+    targetPath: dpuCluster.keepalived.vip
+  - kind: ConfigMap
+    name: blueprint-overrides-dpf-config
+    valuesKey: values.yaml
+    optional: true

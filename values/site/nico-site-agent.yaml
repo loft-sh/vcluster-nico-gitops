@@ -1,0 +1,27 @@
+global:
+  image:
+    repository: ghcr.io/loft-sh/vcluster-platform-nico
+    tag: v2.4.0-vcluster.rc5.1.g3d8bdad7
+  imagePullSecrets: []
+  certificate:
+    issuerRef:
+      kind: ClusterIssuer
+      name: vault-nico-issuer
+      group: cert-manager.io
+bootstrap:
+  enabled: false
+certificate:
+  uris:
+  - spiffe://nico.local/nico-system/sa/elektra-site-agent
+envConfig:
+  DEV_MODE: 'false'
+  ENABLE_DEBUG: 'false'
+  CORE_GRPC_ADDRESS: nico-api.nico-system.svc.cluster.local:1079
+  CORE_GRPC_SEC_OPT: '2'
+  FLOW_GRPC_ENABLED: 'false'
+  CLUSTER_ID: ''
+  TEMPORAL_HOST: temporal.example.com
+  TEMPORAL_PORT: '7233'
+  TEMPORAL_SERVER: site.server.temporal.local
+  TEMPORAL_SUBSCRIBE_NAMESPACE: ''
+  TEMPORAL_SUBSCRIBE_QUEUE: site

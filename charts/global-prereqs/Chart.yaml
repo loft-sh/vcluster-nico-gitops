@@ -1,0 +1,5 @@
+apiVersion: v2
+name: global-prereqs
+description: Namespaces, REST CA, Temporal certificates and namespaces, PostgreSQL and the site-facing Services that NICo REST and Temporal need on the global control plane
+type: application
+version: 0.1.0

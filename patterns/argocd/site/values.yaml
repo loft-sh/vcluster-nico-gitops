@@ -1,0 +1,53 @@
+blueprint:
+  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+  targetRevision: v0.1.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/site-1/nico
+nico:
+  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
+  targetRevision: source/v2.4.0-vcluster.rc5.1
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories: []
+components:
+- name: nico
+  releaseName: nico
+  namespace: nico-system
+  wave: 0
+  source:
+    nico: true
+    path: helm
+  valueFiles:
+  - $blueprint/values/site/nico.yaml
+  - $env/{path}/overrides/nico.yaml
+  settings:
+  - key: vaultAddr
+    path: nico-api.vaultClusterInfo.VAULT_SERVICE
+  - key: vaultKvMount
+    path: nico-api.vaultClusterInfo.NICO_VAULT_MOUNT
+  - key: vaultPkiMount
+    path: nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT
+- name: nico-site-agent
+  releaseName: nico-rest-site-agent
+  namespace: nico-rest
+  wave: 1
+  source:
+    nico: true
+    path: helm/rest/nico-rest-site-agent
+  valueFiles:
+  - $blueprint/values/site/nico-site-agent.yaml
+  - $env/{path}/overrides/nico-site-agent.yaml
+  settings:
+  - key: siteId
+    path: envConfig.CLUSTER_ID
+  - key: siteId
+    path: envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE
+  - key: temporalHost
+    path: envConfig.TEMPORAL_HOST

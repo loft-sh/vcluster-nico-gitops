@@ -1,0 +1,95 @@
+{{- if .Values.postgres.enabled }}
+{{- $p := .Values.postgres }}
+{{- $ns := .Values.namespaces.nico }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nico-postgres-init
+  namespace: {{ $ns }}
+data:
+  001-create-role-and-database.sh: |
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -v app_password="$APP_PASSWORD" <<'SQL'
+    SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', '{{ $p.user }}', :'app_password')
+    WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{{ $p.user }}')\gexec
+    SELECT 'CREATE DATABASE {{ $p.database }} OWNER {{ $p.user }}'
+    WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $p.database }}')\gexec
+    SQL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nico-postgres
+  namespace: {{ $ns }}
+spec:
+  selector:
+    app.kubernetes.io/name: nico-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nico-postgres
+  namespace: {{ $ns }}
+spec:
+  serviceName: nico-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nico-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nico-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ $p.image }}
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $p.credentialsSecret }}
+                  key: admin_password
+            - name: APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $p.credentialsSecret }}
+                  key: app_password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U postgres"]
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init
+          configMap:
+            name: nico-postgres-init
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with $p.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $p.size }}
+{{- end }}

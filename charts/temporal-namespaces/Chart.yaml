@@ -1,0 +1,5 @@
+apiVersion: v2
+name: temporal-namespaces
+description: Creates the Temporal namespaces NICo REST and its site agents use, once Temporal is running
+type: application
+version: 0.1.0

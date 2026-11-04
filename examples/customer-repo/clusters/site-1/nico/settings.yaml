@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blueprint-settings
+  namespace: flux-system
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+data:
+  siteId: ""
+  temporalHost: temporal.example.com
+  vaultAddr: https://vault.example.com
+  vaultKvMount: nico-kv
+  vaultPkiMount: nico-pki
+  vaultPkiRole: nico-cluster
+  vaultCertManagerAuthMount: kubernetes
+  vaultCertManagerRole: cert-manager
+  storageClass: ""

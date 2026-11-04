@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-namespaces
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+  namespace: {{ .Values.namespace }}
+spec:
+  backoffLimit: 30
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create
+          image: {{ .Values.adminToolsImage }}
+          command: ["sh", "-ec"]
+          args:
+            - |
+              T="--address {{ .Values.frontendAddress }} --tls-cert-path /certs/tls.crt --tls-key-path /certs/tls.key --tls-ca-path /certs/ca.crt --tls-server-name interservice.server.temporal.local"
+              until temporal operator namespace list $T >/dev/null 2>&1; do
+                echo "waiting for the Temporal frontend"
+                sleep 10
+              done
+              for ns in {{ join " " .Values.namespaces }}; do
+                if temporal operator namespace describe -n "$ns" $T >/dev/null 2>&1; then
+                  echo "namespace $ns already exists"
+                else
+                  temporal operator namespace create -n "$ns" --retention {{ .Values.retention }} $T
+                  echo "namespace $ns created"
+                fi
+              done
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: server-interservice-certs

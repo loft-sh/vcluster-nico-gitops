@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+resources:
+- settings.yaml
+- blueprint.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+configMapGenerator:
+- name: blueprint-overrides-nico
+  files:
+  - values.yaml=overrides/nico.yaml
+- name: blueprint-overrides-kamaji
+  files:
+  - values.yaml=overrides/kamaji.yaml

@@ -1,0 +1,37 @@
+{{- $e := .Values.etcd }}
+{{- $ns := .Values.namespace }}
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: {{ .Values.name }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  driver: etcd
+  endpoints:
+    {{- range $i := until (int $e.replicas) }}
+    - {{ $e.serviceName }}-{{ $i }}.{{ $e.serviceName }}.{{ $ns }}.svc.cluster.local:2379
+    {{- end }}
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          keyPath: ca.crt
+          name: {{ $e.certsSecret }}
+          namespace: {{ $ns }}
+      privateKey:
+        secretReference:
+          keyPath: ca.key
+          name: {{ $e.certsSecret }}
+          namespace: {{ $ns }}
+    clientCertificate:
+      certificate:
+        secretReference:
+          keyPath: tls.crt
+          name: {{ $e.clientCertsSecret }}
+          namespace: {{ $ns }}
+      privateKey:
+        secretReference:
+          keyPath: tls.key
+          name: {{ $e.clientCertsSecret }}
+          namespace: {{ $ns }}

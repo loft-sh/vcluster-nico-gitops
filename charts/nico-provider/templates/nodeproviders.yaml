@@ -1,0 +1,26 @@
+{{- range .Values.sites }}
+{{- if .siteId }}
+---
+apiVersion: management.loft.sh/v1
+kind: NodeProvider
+metadata:
+  name: {{ .name }}
+spec:
+  displayName: {{ .displayName | default .name }}
+  nico:
+    endpoint: {{ .restEndpoint | default $.Values.restEndpoint }}
+    org: {{ .org | default $.Values.org }}
+    siteId: {{ .siteId }}
+    networkMode: {{ .networkMode | default $.Values.networkMode }}
+    {{- if or .insecureSkipTLSVerify $.Values.insecureSkipTLSVerify }}
+    insecureSkipTLSVerify: true
+    {{- end }}
+    identity:
+      platformIssued:
+        enabled: true
+    {{- with .nodeTypes }}
+    nodeTypes:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}
+{{- end }}

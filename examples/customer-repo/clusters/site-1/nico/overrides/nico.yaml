@@ -1,0 +1,60 @@
+nico-api:
+  hostname: nico.site-1.example.com
+  siteConfig:
+    enabled: true
+    nicoApiSiteConfig: |
+      sitename = "site-1"
+      initial_domain_name = "site-1.example.com"
+      dhcp_servers = ["nico-dhcp.nico-system.svc.cluster.local:67"]
+      enable_route_servers = true
+      attestation_enabled = false
+
+      [pools.lo-ip]
+      type = "ipv4"
+      ranges = [{ start = "10.0.0.0", end = "10.0.1.0" }]
+
+      [pools.vlan-id]
+      type = "integer"
+      ranges = [{ start = "100", end = "501" }]
+
+      [pools.vni]
+      type = "integer"
+      ranges = [{ start = "1024500", end = "1024800" }]
+
+      [pools.vpc-vni]
+      type = "integer"
+      ranges = [{ start = "0", end = "100" }]
+
+      [dpf]
+      enabled = false
+
+      [dpf.services.dpu_agent]
+      helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
+      helm_chart = "nico-dpu-agent"
+      helm_version = "2.4.0-vcluster.rc5.1.g3d8bdad7"
+      docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/forge-dpu-agent"
+      docker_image_tag = "v2.4.0-vcluster.rc5.1.g3d8bdad7"
+
+      [dpf.services.dhcp_server]
+      helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
+      helm_chart = "nico-dhcp-server"
+      helm_version = "2.4.0-vcluster.rc5.1.g3d8bdad7"
+      docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/forge-dhcp-server"
+      docker_image_tag = "v2.4.0-vcluster.rc5.1.g3d8bdad7"
+
+      [dpf.services.fmds]
+      helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
+      helm_chart = "nico-fmds"
+      helm_version = "2.4.0-vcluster.rc5.1.g3d8bdad7"
+      docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/carbide-fmds"
+      docker_image_tag = "v2.4.0-vcluster.rc5.1.g3d8bdad7"
+
+      [dpf.services.otel]
+      helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
+      helm_chart = "nico-otelcol"
+      helm_version = "2.4.0-vcluster.rc5.1.g3d8bdad7"
+      docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/otelcol-contrib"
+      docker_image_tag = "v2.4.0-vcluster.rc5.1.g3d8bdad7"
+
+      [dpf.services.otel.extra_helm_values.transceiverExporter.image]
+      repository = "ghcr.io/loft-sh/vcluster-platform-nico/transceiver-exporter"

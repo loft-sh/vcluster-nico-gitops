@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nico-site-dpu-apps
+description: Argo CD applications for the NICo site DPU management layer blueprint
+type: application
+version: 0.1.0
+appVersion: 2.4.0-rc.5

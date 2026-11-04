@@ -1,0 +1,43 @@
+{{- if not .Values.apiServer.vip }}{{ fail "apiServer.vip: the Kubernetes API address the DPUs reach (setting dpfApiServerVip)" }}{{ end }}
+{{- $k := .Values.dpuCluster.keepalived }}
+apiVersion: operator.dpu.nvidia.com/v1alpha1
+kind: DPFOperatorConfig
+metadata:
+  name: dpfoperatorconfig
+  namespace: {{ .Values.namespace }}
+spec:
+  dpuDetector:
+    disable: true
+  provisioningController:
+    osInstallTimeout: {{ .Values.osInstallTimeout | quote }}
+    installInterface:
+      installViaRedfish:
+        skipDPUNodeDiscovery: true
+  overrides:
+    kubernetesAPIServerVIP: {{ .Values.apiServer.vip | quote }}
+    kubernetesAPIServerPort: {{ .Values.apiServer.port }}
+    argoCDNamespace: {{ .Values.namespace }}
+  kamajiClusterManager:
+    disable: false
+  networking:
+    highSpeedMTU: {{ .Values.highSpeedMTU }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUCluster
+metadata:
+  name: {{ .Values.dpuCluster.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: kamaji
+  maxNodes: {{ .Values.dpuCluster.maxNodes }}
+  {{- if $k.vip }}
+  clusterEndpoint:
+    keepalived:
+      interface: {{ $k.interface | quote }}
+      vip: {{ $k.vip | quote }}
+      virtualRouterID: {{ $k.virtualRouterID }}
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: {{ $k.controlPlaneLabelValue | quote }}
+  {{- else }}
+  clusterEndpoint: {}
+  {{- end }}

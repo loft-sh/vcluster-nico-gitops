@@ -1,0 +1,5 @@
+restEndpoint: http://nico-rest-api.nico-rest.svc.cluster.local:8388
+org: vcluster-autonodes
+networkMode: fnn
+insecureSkipTLSVerify: false
+sites: []

@@ -1,0 +1,22 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Patterns are up to date with the generator
+        run: |
+          pip install --quiet pyyaml
+          python3 scripts/generate-patterns.py
+          git diff --exit-code
+      - name: Render every pattern, example and chart
+        run: scripts/validate.sh

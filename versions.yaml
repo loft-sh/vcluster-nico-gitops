@@ -1,0 +1,16 @@
+nico:
+  charts: source/v2.4.0-vcluster.rc5.1
+  images: v2.4.0-vcluster.rc5.1.g3d8bdad7
+vcluster-platform: 5.0.0-rc.1
+cert-manager: v1.20.2
+postgres: 14.5-alpine
+temporal-admin-tools: 1.26.2
+kubectl: 1.29.4
+dpf:
+  operator: v26.4.0
+  argo-cd: 9.4.1
+  kamaji: 1.2.0
+  kamaji-image: v1.34.0-25.9.3
+  cfssl: v1.6.5
+  maintenance-operator: 0.3.0
+  node-feature-discovery: 0.18.3

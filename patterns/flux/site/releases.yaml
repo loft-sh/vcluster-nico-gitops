@@ -1,0 +1,99 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nico
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: nico
+  targetNamespace: nico-system
+  storageNamespace: nico-system
+  chart:
+    spec:
+      chart: ./helm
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: nico-charts
+  install:
+    createNamespace: true
+    timeout: 20m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 20m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: site-prereqs
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-nico
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultAddr
+    targetPath: nico-api.vaultClusterInfo.VAULT_SERVICE
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultKvMount
+    targetPath: nico-api.vaultClusterInfo.NICO_VAULT_MOUNT
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: vaultPkiMount
+    targetPath: nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT
+  - kind: ConfigMap
+    name: blueprint-overrides-nico
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nico-site-agent
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: nico-rest-site-agent
+  targetNamespace: nico-rest
+  storageNamespace: nico-rest
+  chart:
+    spec:
+      chart: ./helm/rest/nico-rest-site-agent
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: nico-charts
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  dependsOn:
+  - name: nico
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-nico-site-agent
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: siteId
+    targetPath: envConfig.CLUSTER_ID
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: siteId
+    targetPath: envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: temporalHost
+    targetPath: envConfig.TEMPORAL_HOST
+  - kind: ConfigMap
+    name: blueprint-overrides-nico-site-agent
+    valuesKey: values.yaml
+    optional: true

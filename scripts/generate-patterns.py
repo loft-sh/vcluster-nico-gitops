@@ -1,0 +1,268 @@
+import os
+import re
+import sys
+import yaml
+
+R = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+V = yaml.safe_load(open(f"{R}/versions.yaml"))
+
+NICO_SOURCE = {"kind": "GitRepository", "name": "nico-charts"}
+BLUEPRINT = {"kind": "GitRepository", "name": "vcluster-nico-blueprints"}
+
+def helm_repo(name, url, oci=False):
+    spec = {"interval": "1h", "url": url}
+    if oci:
+        spec["type"] = "oci"
+    return {"apiVersion": "source.toolkit.fluxcd.io/v1", "kind": "HelmRepository",
+            "metadata": {"name": name, "namespace": "flux-system"}, "spec": spec}
+
+
+REPOS = {
+    "jetstack": "https://charts.jetstack.io",
+    "loft": "https://charts.loft.sh",
+    "argo": "https://argoproj.github.io/argo-helm",
+    "nfd": "https://kubernetes-sigs.github.io/node-feature-discovery/charts",
+    "doca": "https://helm.ngc.nvidia.com/nvidia/doca",
+    "nvidia-charts": "oci://ghcr.io/nvidia/charts",
+    "mellanox": "oci://ghcr.io/mellanox",
+}
+
+NICO_GIT = {
+    "apiVersion": "source.toolkit.fluxcd.io/v1", "kind": "GitRepository",
+    "metadata": {"name": "nico-charts", "namespace": "flux-system"},
+    "spec": {"interval": "1h", "url": "https://github.com/loft-sh/vcluster-platform-nico",
+             "ref": {"tag": V["nico"]["charts"]},
+             "ignore": "/*\n!/helm/\n!/rest-api/temporal-helm/\n"},
+}
+
+CERT_MANAGER = dict(name="cert-manager", repo=("jetstack", "cert-manager", V["cert-manager"]), ns="cert-manager",
+                    values={"crds": {"enabled": True}})
+
+COMPONENTS = {
+    "global": [
+        CERT_MANAGER,
+        dict(name="global-prereqs", blueprint="./charts/global-prereqs", ns="nico-rest", deps=["cert-manager"],
+             settings=[("storageClass", "postgres.storageClass")]),
+        dict(name="temporal", git="./rest-api/temporal-helm/temporal", ns="temporal", deps=["global-prereqs"], defaults=True,
+             valuesFiles=["./rest-api/temporal-helm/temporal/values.yaml", "./rest-api/temporal-helm/temporal/values-kind.yaml"]),
+        dict(name="temporal-namespaces", blueprint="./charts/temporal-namespaces", ns="temporal", deps=["temporal"]),
+        dict(name="nico-rest", git="./helm/rest/nico-rest", ns="nico-rest", deps=["temporal-namespaces"], defaults=True,
+             settings=[("platformOidcIssuer", "nico-rest-api.config.issuers[0].issuer"),
+                       ("siteManagerHost", "nico-rest-site-manager.certificate.dnsNames[5]")]),
+        dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
+             deps=["cert-manager"], defaults=True, settings=[("platformHost", "config.loftHost")]),
+        dict(name="nico-provider", blueprint="./charts/nico-provider", ns="vcluster-platform",
+             deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
+    ],
+    "site-base": [
+        CERT_MANAGER,
+        dict(name="site-prereqs", blueprint="./charts/site-prereqs", ns="nico-system", deps=["cert-manager"],
+             settings=[("vaultAddr", "vault.address"), ("vaultPkiMount", "vault.pkiMount"), ("vaultPkiRole", "vault.pkiRole"),
+                       ("vaultCertManagerAuthMount", "vault.certManager.authMount"),
+                       ("vaultCertManagerRole", "vault.certManager.role"), ("storageClass", "postgres.storageClass")]),
+    ],
+    "site-dpu": [
+        dict(name="argo-cd", repo=("argo", "argo-cd", V["dpf"]["argo-cd"]), ns="dpf-operator-system", defaults=True),
+        dict(name="kamaji", repo=("nvidia-charts", "kamaji", V["dpf"]["kamaji"]), ns="dpf-operator-system", deps=["cert-manager"],
+             defaults=True, disableWait=True),
+        dict(name="kamaji-datastore", blueprint="./charts/kamaji-datastore", ns="dpf-operator-system", deps=["kamaji"],
+             wave_with="kamaji"),
+        dict(name="maintenance-operator", repo=("mellanox", "maintenance-operator-chart", V["dpf"]["maintenance-operator"]), ns="dpf-operator-system",
+             deps=["cert-manager"], defaults=True),
+        dict(name="node-feature-discovery", repo=("nfd", "node-feature-discovery", V["dpf"]["node-feature-discovery"]), ns="dpf-operator-system",
+             defaults=True),
+        dict(name="dpf-operator", repo=("doca", "dpf-operator", V["dpf"]["operator"]), ns="dpf-operator-system", defaults=True,
+             deps=["argo-cd", "kamaji-datastore", "maintenance-operator", "node-feature-discovery"]),
+        dict(name="dpf-config", blueprint="./charts/dpf-config", ns="dpf-operator-system", deps=["dpf-operator"],
+             settings=[("dpfApiServerVip", "apiServer.vip"), ("dpfApiServerPort", "apiServer.port"),
+                       ("dpuClusterInterface", "dpuCluster.keepalived.interface"),
+                       ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
+    ],
+    "site": [
+        dict(name="nico", git="./helm", ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
+             settings=[("vaultAddr", "nico-api.vaultClusterInfo.VAULT_SERVICE"),
+                       ("vaultKvMount", "nico-api.vaultClusterInfo.NICO_VAULT_MOUNT"),
+                       ("vaultPkiMount", "nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT")]),
+        dict(name="nico-site-agent", release="nico-rest-site-agent", git="./helm/rest/nico-rest-site-agent", ns="nico-rest",
+             deps=["nico"], defaults=True, disableWait=True,
+             settings=[("siteId", "envConfig.CLUSTER_ID"), ("siteId", "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE"),
+                       ("temporalHost", "envConfig.TEMPORAL_HOST")]),
+    ],
+}
+
+SCOPE_SOURCES = {"global": ["jetstack", "loft"], "site-base": ["jetstack"],
+                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": []}
+SCOPE_NICO_GIT = {"global": True, "site-base": False, "site-dpu": False, "site": True}
+SCOPE_TITLE = {"global": "global control plane", "site-base": "NICo site base layer",
+               "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
+
+
+def release(c):
+    if "repo" in c:
+        repo, chart, version = c["repo"]
+        chart_spec = {"chart": chart, "version": version,
+                      "sourceRef": {"kind": "HelmRepository", "name": repo}}
+    elif "git" in c:
+        chart_spec = {"chart": c["git"], "reconcileStrategy": "Revision", "sourceRef": dict(NICO_SOURCE)}
+        if c.get("valuesFiles"):
+            chart_spec["valuesFiles"] = c["valuesFiles"]
+    else:
+        chart_spec = {"chart": c["blueprint"], "reconcileStrategy": "Revision", "sourceRef": dict(BLUEPRINT)}
+    values_from = []
+    if c.get("defaults"):
+        values_from.append({"kind": "ConfigMap", "name": f"blueprint-defaults-{c['name']}", "valuesKey": "values.yaml"})
+    for key, path in c.get("settings", []):
+        values_from.append({"kind": "ConfigMap", "name": "blueprint-settings", "valuesKey": key, "targetPath": path})
+    values_from.append({"kind": "ConfigMap", "name": f"blueprint-overrides-{c['name']}", "valuesKey": "values.yaml",
+                        "optional": True})
+    timeout = c.get("timeout", "15m")
+    spec = {
+        "interval": "10m",
+        "releaseName": c.get("release", c["name"]),
+        "targetNamespace": c["ns"],
+        "storageNamespace": c["ns"],
+        "chart": {"spec": chart_spec},
+        "install": {"createNamespace": True, "timeout": timeout, "remediation": {"retries": 3}},
+        "upgrade": {"timeout": timeout, "remediation": {"retries": 3}},
+    }
+    if c.get("disableWait"):
+        spec["install"]["disableWait"] = True
+        spec["upgrade"]["disableWait"] = True
+    if c.get("deps"):
+        spec["dependsOn"] = [{"name": d} for d in c["deps"]]
+    if c.get("values"):
+        spec["values"] = c["values"]
+    spec["valuesFrom"] = values_from
+    return {"apiVersion": "helm.toolkit.fluxcd.io/v2", "kind": "HelmRelease",
+            "metadata": {"name": c["name"], "namespace": "flux-system"}, "spec": spec}
+
+
+for scope in COMPONENTS:
+    d = f"{R}/patterns/flux/{scope}"
+    os.makedirs(d, exist_ok=True)
+    sources = [helm_repo(n, REPOS[n], REPOS[n].startswith("oci://")) for n in SCOPE_SOURCES[scope]]
+    if SCOPE_NICO_GIT[scope]:
+        sources.append(NICO_GIT)
+    with open(f"{d}/sources.yaml", "w") as f:
+        yaml.safe_dump_all(sources, f, sort_keys=False)
+    with open(f"{d}/releases.yaml", "w") as f:
+        yaml.safe_dump_all([release(c) for c in COMPONENTS[scope]], f, sort_keys=False)
+    with open(f"{d}/kustomization.yaml", "w") as f:
+        resources = ["sources.yaml", "releases.yaml"]
+        if any(c.get("defaults") for c in COMPONENTS[scope]):
+            resources.append(f"../../../values/{scope}")
+        yaml.safe_dump({"apiVersion": "kustomize.config.k8s.io/v1beta1", "kind": "Kustomization",
+                        "resources": resources}, f, sort_keys=False)
+    print(scope, [c["name"] for c in COMPONENTS[scope]])
+
+REPO_URLS = {k: v.replace("oci://", "") for k, v in REPOS.items()}
+
+
+def argo_component(c, wave):
+    out = {"name": c["name"], "releaseName": c.get("release", c["name"]), "namespace": c["ns"], "wave": wave}
+    value_files = []
+    if "repo" in c:
+        repo, chart, version = c["repo"]
+        out["source"] = {"repoURL": REPO_URLS[repo], "chart": chart, "targetRevision": version}
+    elif "git" in c:
+        out["source"] = {"nico": True, "path": c["git"].lstrip("./")}
+        value_files += [f.split("/")[-1] for f in c.get("valuesFiles", [])]
+    else:
+        out["source"] = {"blueprint": True, "path": c["blueprint"].lstrip("./")}
+    if c.get("defaults"):
+        value_files.append(f"$blueprint/values/{{scope}}/{c['name']}.yaml")
+    value_files.append(f"$env/{{path}}/overrides/{c['name']}.yaml")
+    out["valueFiles"] = value_files
+    if c.get("settings"):
+        out["settings"] = [{"key": k, "path": p} for k, p in c["settings"]]
+    if c.get("values"):
+        out["values"] = c["values"]
+    return out
+
+
+for scope in COMPONENTS:
+    by_name = {c["name"]: c for c in COMPONENTS[scope]}
+    deps = {c["name"]: [d for d in c.get("deps", []) if d in by_name] for c in COMPONENTS[scope]}
+    wave = {}
+    def depth(n):
+        if n not in wave:
+            if by_name[n].get("wave_with"):
+                wave[n] = depth(by_name[n]["wave_with"])
+            else:
+                wave[n] = 0 if not deps[n] else 1 + max(depth(d) for d in deps[n])
+        return wave[n]
+    comps = []
+    for c in COMPONENTS[scope]:
+        a = argo_component(c, depth(c["name"]))
+        a["valueFiles"] = [v.replace("{scope}", scope) for v in a["valueFiles"]]
+        comps.append(a)
+    values = {
+        "blueprint": {"repoURL": "https://github.com/example-org/vcluster-nico-blueprints.git", "targetRevision": "v0.1.0"},
+        "environment": {"repoURL": "https://github.com/example-org/nico-environments.git", "targetRevision": "main",
+                        "path": f"clusters/{'global' if scope == 'global' else 'site-1'}/nico"},
+        "nico": {"repoURL": NICO_GIT["spec"]["url"] + ".git", "targetRevision": NICO_GIT["spec"]["ref"]["tag"]},
+        "argocd": {"namespace": "argocd", "project": "default"},
+        "destination": {"server": "https://kubernetes.default.svc"},
+        "namePrefix": "",
+        "data": {},
+        "ociRepositories": [REPO_URLS[n] for n in SCOPE_SOURCES[scope] if REPOS[n].startswith("oci://")],
+        "components": comps,
+    }
+    os.makedirs(f"{R}/patterns/argocd/{scope}/templates", exist_ok=True)
+    with open(f"{R}/patterns/argocd/{scope}/values.yaml", "w") as f:
+        yaml.safe_dump(values, f, sort_keys=False)
+    with open(f"{R}/patterns/argocd/{scope}/Chart.yaml", "w") as f:
+        yaml.safe_dump({"apiVersion": "v2", "name": f"nico-{scope}-apps",
+                        "description": f"Argo CD applications for the {SCOPE_TITLE[scope]} blueprint",
+                        "type": "application", "version": "0.1.0", "appVersion": "2.4.0-rc.5"}, f, sort_keys=False)
+    print("argocd", scope, [(c["name"], c["wave"]) for c in comps])
+
+for scope in COMPONENTS:
+    files = [c["name"] for c in COMPONENTS[scope] if c.get("defaults")]
+    if not files:
+        continue
+    kust = {"apiVersion": "kustomize.config.k8s.io/v1beta1", "kind": "Kustomization", "namespace": "flux-system",
+            "generatorOptions": {"disableNameSuffixHash": True, "labels": {"reconcile.fluxcd.io/watch": "Enabled"}},
+            "configMapGenerator": [{"name": f"blueprint-defaults-{n}", "files": [f"values.yaml={n}.yaml"]} for n in files]}
+    with open(f"{R}/values/{scope}/kustomization.yaml", "w") as f:
+        yaml.safe_dump(kust, f, sort_keys=False)
+
+
+def set_path(doc, path, value):
+    node = doc
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = value
+
+
+def pin(path, pins):
+    doc = yaml.safe_load(open(f"{R}/{path}"))
+    for keys, value in pins:
+        set_path(doc, keys, value)
+    with open(f"{R}/{path}", "w") as f:
+        yaml.safe_dump(doc, f, sort_keys=False)
+
+
+IMAGES = V["nico"]["images"]
+pin("values/global/nico-rest.yaml", [(["global", "image", "tag"], IMAGES)])
+pin("values/site/nico-site-agent.yaml", [(["global", "image", "tag"], IMAGES)])
+site = yaml.safe_load(open(f"{R}/values/site/nico.yaml"))
+pin("values/site/nico.yaml", [(["global", "image", "tag"], IMAGES)] +
+    [(["nico-pxe", "bootArtifactContainers", i, "tag"], IMAGES) for i in range(len(site["nico-pxe"]["bootArtifactContainers"]))])
+pin("values/site-dpu/dpf-operator.yaml", [(["controllerManager", "image", "tag"], V["dpf"]["operator"])])
+pin("values/site-dpu/kamaji.yaml", [(["image", "tag"], V["dpf"]["kamaji-image"]), (["cfssl", "image", "tag"], V["dpf"]["cfssl"])])
+pin("charts/global-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
+pin("charts/site-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
+pin("charts/temporal-namespaces/values.yaml", [(["adminToolsImage"], f"temporalio/admin-tools:{V['temporal-admin-tools']}")])
+pin("charts/kamaji-datastore/values.yaml", [(["kubectlImage"], f"alpine/k8s:{V['kubectl']}")])
+
+TOML_PINS = [(re.compile(r'(helm_version = ")[^"]*(")'), IMAGES.lstrip("v")),
+             (re.compile(r'(docker_image_tag = ")[^"]*(")'), IMAGES)]
+for root in ("examples/customer-repo/clusters", "test/e2e"):
+    for dirpath, _, files in os.walk(f"{R}/{root}"):
+        if "nico.yaml" in files and dirpath.endswith("overrides"):
+            path = f"{dirpath}/nico.yaml"
+            text = open(path).read()
+            for rx, value in TOML_PINS:
+                text = rx.sub(lambda m: m.group(1) + value + m.group(2), text)
+            open(path, "w").write(text)

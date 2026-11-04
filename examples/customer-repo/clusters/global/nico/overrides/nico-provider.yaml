@@ -1,0 +1,17 @@
+sites:
+  - name: nico-site-1
+    displayName: Site 1
+    siteId: ""
+    nodeTypes:
+      - name: h200
+        displayName: H200
+        metadata: {}
+        resources:
+          nvidia.com/gpu: "8"
+          memory: 2Ti
+        properties:
+          nico.vcluster.com/gpu-model: NVIDIA H200
+        machines:
+          selector:
+            matchLabels:
+              nico.vcluster.com/instance-type-id: 00000000-0000-0000-0000-000000000000

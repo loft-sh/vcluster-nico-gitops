@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+configMapGenerator:
+- name: blueprint-defaults-temporal
+  files:
+  - values.yaml=temporal.yaml
+- name: blueprint-defaults-nico-rest
+  files:
+  - values.yaml=nico-rest.yaml
+- name: blueprint-defaults-vcluster-platform
+  files:
+  - values.yaml=vcluster-platform.yaml

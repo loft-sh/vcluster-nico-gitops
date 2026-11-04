@@ -1,0 +1,5 @@
+server:
+  frontend:
+    externalService:
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: temporal.example.com

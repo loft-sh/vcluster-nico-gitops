@@ -1,0 +1,8 @@
+namespace: temporal
+namespaces:
+- cloud
+- site
+- flow
+retention: 72h
+adminToolsImage: temporalio/admin-tools:1.26.2
+frontendAddress: temporal-frontend.temporal.svc.cluster.local:7233

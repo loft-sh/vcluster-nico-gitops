@@ -1,0 +1,5 @@
+apiVersion: v2
+name: site-prereqs
+description: Namespaces, the Vault PKI ClusterIssuer and PostgreSQL that NICo Core and the site agent need on a site cluster
+type: application
+version: 0.1.0

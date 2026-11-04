@@ -1,0 +1,4 @@
+siteManager:
+  external:
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: site-manager.example.com

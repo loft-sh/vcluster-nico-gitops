@@ -1,0 +1,22 @@
+replicaCount: 1
+admin:
+  create: true
+  username: admin
+  passwordSecretRef:
+    name: vcluster-platform-admin
+    key: password
+envValueFrom:
+  LICENSE_TOKEN:
+    secretKeyRef:
+      name: vcluster-platform-license
+      key: token
+      optional: true
+service:
+  type: LoadBalancer
+persistence:
+  enabled: true
+  size: 30Gi
+config:
+  loftHost: platform.example.com
+  audit:
+    enabled: true

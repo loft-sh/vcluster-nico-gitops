@@ -1,0 +1,5 @@
+enableNodeFeatureRules: false
+controllerManager:
+  image:
+    repository: nvcr.io/nvidia/doca/dpf-system
+    tag: v26.4.0

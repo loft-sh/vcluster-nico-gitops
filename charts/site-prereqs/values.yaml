@@ -1,0 +1,26 @@
+namespaces:
+  nico: nico-system
+  certManager: cert-manager
+vault:
+  address: https://vault.example.com
+  caBundle: ''
+  pkiMount: nico-pki
+  pkiRole: nico-cluster
+  certManager:
+    authMount: kubernetes
+    role: cert-manager
+    controllerServiceAccount: cert-manager
+    serviceAccount: cert-manager-vault
+    audiences:
+    - https://kubernetes.default.svc.cluster.local
+    authDelegator: true
+issuer:
+  name: vault-nico-issuer
+postgres:
+  enabled: true
+  image: postgres:14.5-alpine
+  storageClass: ''
+  size: 20Gi
+  credentialsSecret: nico-postgres-credentials
+  database: nico
+  user: nico

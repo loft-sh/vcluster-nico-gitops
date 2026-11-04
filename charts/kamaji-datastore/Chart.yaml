@@ -1,0 +1,5 @@
+apiVersion: v2
+name: kamaji-datastore
+description: Creates Kamaji's default etcd DataStore without the cold-start webhook deadlock, by relaxing the DataStore webhook until the Kamaji controller serves it
+type: application
+version: 0.1.0

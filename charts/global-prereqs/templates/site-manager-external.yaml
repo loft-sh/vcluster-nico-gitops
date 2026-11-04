@@ -1,0 +1,24 @@
+{{- with .Values.siteManager.external }}
+{{- if .enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: nico-rest-site-manager-external
+  namespace: {{ $.Values.namespaces.nicoRest }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .type }}
+  {{- with .loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: nico-rest-site-manager
+  ports:
+    - name: https
+      port: 8100
+      targetPort: 8100
+{{- end }}
+{{- end }}

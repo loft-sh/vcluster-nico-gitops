@@ -1,0 +1,54 @@
+blueprint:
+  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+  targetRevision: v0.1.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/site-1/nico
+nico:
+  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
+  targetRevision: source/v2.4.0-vcluster.rc5.1
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories: []
+components:
+- name: cert-manager
+  releaseName: cert-manager
+  namespace: cert-manager
+  wave: 0
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.20.2
+  valueFiles:
+  - $env/{path}/overrides/cert-manager.yaml
+  values:
+    crds:
+      enabled: true
+- name: site-prereqs
+  releaseName: site-prereqs
+  namespace: nico-system
+  wave: 1
+  source:
+    blueprint: true
+    path: charts/site-prereqs
+  valueFiles:
+  - $env/{path}/overrides/site-prereqs.yaml
+  settings:
+  - key: vaultAddr
+    path: vault.address
+  - key: vaultPkiMount
+    path: vault.pkiMount
+  - key: vaultPkiRole
+    path: vault.pkiRole
+  - key: vaultCertManagerAuthMount
+    path: vault.certManager.authMount
+  - key: vaultCertManagerRole
+    path: vault.certManager.role
+  - key: storageClass
+    path: postgres.storageClass

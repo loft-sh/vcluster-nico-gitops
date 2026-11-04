@@ -1,0 +1,271 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: cert-manager
+  targetNamespace: cert-manager
+  storageNamespace: cert-manager
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.20.2
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  values:
+    crds:
+      enabled: true
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-overrides-cert-manager
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: global-prereqs
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: global-prereqs
+  targetNamespace: nico-rest
+  storageNamespace: nico-rest
+  chart:
+    spec:
+      chart: ./charts/global-prereqs
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: storageClass
+    targetPath: postgres.storageClass
+  - kind: ConfigMap
+    name: blueprint-overrides-global-prereqs
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: temporal
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: temporal
+  targetNamespace: temporal
+  storageNamespace: temporal
+  chart:
+    spec:
+      chart: ./rest-api/temporal-helm/temporal
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: nico-charts
+      valuesFiles:
+      - ./rest-api/temporal-helm/temporal/values.yaml
+      - ./rest-api/temporal-helm/temporal/values-kind.yaml
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: global-prereqs
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-temporal
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-overrides-temporal
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: temporal-namespaces
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: temporal-namespaces
+  targetNamespace: temporal
+  storageNamespace: temporal
+  chart:
+    spec:
+      chart: ./charts/temporal-namespaces
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: temporal
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-overrides-temporal-namespaces
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nico-rest
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: nico-rest
+  targetNamespace: nico-rest
+  storageNamespace: nico-rest
+  chart:
+    spec:
+      chart: ./helm/rest/nico-rest
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: nico-charts
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: temporal-namespaces
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-nico-rest
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: platformOidcIssuer
+    targetPath: nico-rest-api.config.issuers[0].issuer
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: siteManagerHost
+    targetPath: nico-rest-site-manager.certificate.dnsNames[5]
+  - kind: ConfigMap
+    name: blueprint-overrides-nico-rest
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vcluster-platform
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: vcluster-platform
+  targetNamespace: vcluster-platform
+  storageNamespace: vcluster-platform
+  chart:
+    spec:
+      chart: vcluster-platform
+      version: 5.0.0-rc.1
+      sourceRef:
+        kind: HelmRepository
+        name: loft
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-defaults-vcluster-platform
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: platformHost
+    targetPath: config.loftHost
+  - kind: ConfigMap
+    name: blueprint-overrides-vcluster-platform
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nico-provider
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: nico-provider
+  targetNamespace: vcluster-platform
+  storageNamespace: vcluster-platform
+  chart:
+    spec:
+      chart: ./charts/nico-provider
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-blueprints
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: vcluster-platform
+  - name: nico-rest
+  valuesFrom:
+  - kind: ConfigMap
+    name: blueprint-settings
+    valuesKey: nicoOrg
+    targetPath: org
+  - kind: ConfigMap
+    name: blueprint-overrides-nico-provider
+    valuesKey: values.yaml
+    optional: true

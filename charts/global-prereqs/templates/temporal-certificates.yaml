@@ -1,0 +1,42 @@
+{{- $ns := .Values.namespaces.temporal }}
+{{- $internal := list "temporal-frontend" "temporal-history" "temporal-matching" "temporal-worker" }}
+{{- $certs := dict
+  "server-interservice" (list "interservice.server.temporal.local")
+  "server-cloud" (list "cloud.server.temporal.local" "cloud.temporal-frontend" (printf "cloud.temporal-frontend.%s" $ns) (printf "cloud.temporal-frontend.%s.svc.cluster.local" $ns))
+  "server-site" (list "site.server.temporal.local" "site.temporal-frontend" (printf "site.temporal-frontend.%s" $ns) (printf "site.temporal-frontend.%s.svc.cluster.local" $ns))
+}}
+{{- range $name := list "server-interservice" "server-cloud" "server-site" }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $name }}-cert
+  namespace: {{ $ns }}
+spec:
+  secretName: {{ $name }}-certs
+  duration: {{ $.Values.certificates.duration }}
+  renewBefore: {{ $.Values.certificates.renewBefore }}
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    {{- range get $certs $name }}
+    - {{ . }}
+    {{- end }}
+    {{- if eq $name "server-interservice" }}
+    {{- range $svc := $internal }}
+    - {{ $svc }}
+    - {{ $svc }}.{{ $ns }}
+    - {{ $svc }}.{{ $ns }}.svc
+    - {{ $svc }}.{{ $ns }}.svc.cluster.local
+    {{- end }}
+    {{- end }}
+  issuerRef:
+    name: {{ $.Values.ca.issuerName }}
+    kind: ClusterIssuer
+    group: cert-manager.io
+{{- end }}
