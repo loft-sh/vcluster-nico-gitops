@@ -8,6 +8,7 @@ metadata:
   namespace: {{ $.Values.argocd.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: {{ $c.wave | quote }}
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

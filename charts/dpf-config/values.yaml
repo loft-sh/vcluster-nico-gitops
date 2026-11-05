@@ -12,3 +12,7 @@ dpuCluster:
     vip: ""
     virtualRouterID: 126
     controlPlaneLabelValue: ""
+nicoApiKubeconfig:
+  enabled: true
+  namespace: nico-system
+  mountPath: /var/run/secrets/nico-kube
