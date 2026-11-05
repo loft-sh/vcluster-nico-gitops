@@ -88,6 +88,15 @@ components:
   namespace: vcluster-platform
   wave: 1
   serverSideDiff: false
+  ignoreDifferences:
+  - kind: Service
+    jqPathExpressions:
+    - .spec.ports[].nodePort
+    - .metadata.annotations["metallb.io/ip-allocated-from-pool"]
+  - kind: PersistentVolumeClaim
+    jsonPointers:
+    - /spec/storageClassName
+    - /spec/volumeName
   source:
     repoURL: https://charts.loft.sh
     chart: vcluster-platform

@@ -45,7 +45,10 @@ COMPONENTS = {
              settings=[("platformOidcIssuer", "nico-rest-api.config.issuers[0].issuer"),
                        ("siteManagerHost", "nico-rest-site-manager.certificate.dnsNames[5]")]),
         dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
-             deps=["cert-manager"], defaults=True, serverSideDiff=False, settings=[("platformHost", "config.loftHost")]),
+             deps=["cert-manager"], defaults=True, serverSideDiff=False,
+             argoIgnore=[{"kind": "Service", "jqPathExpressions": [".spec.ports[].nodePort",
+                                                                   '.metadata.annotations["metallb.io/ip-allocated-from-pool"]']},
+                         {"kind": "PersistentVolumeClaim", "jsonPointers": ["/spec/storageClassName", "/spec/volumeName"]}], settings=[("platformHost", "config.loftHost")]),
         dict(name="nico-provider", gitops="./charts/nico-provider", ns="vcluster-platform",
              deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
     ],
@@ -160,6 +163,8 @@ REPO_URLS = {k: v.replace("oci://", "") for k, v in REPOS.items()}
 def argo_component(c, wave):
     out = {"name": c["name"], "releaseName": c.get("release", c["name"]), "namespace": c["ns"], "wave": wave,
            "serverSideDiff": c.get("serverSideDiff", True)}
+    if c.get("argoIgnore"):
+        out["ignoreDifferences"] = c["argoIgnore"]
     value_files = []
     if "repo" in c:
         repo, chart, version = c["repo"]

@@ -16,6 +16,10 @@ spec:
   destination:
     server: {{ $.Values.destination.server }}
     namespace: {{ $c.namespace }}
+  {{- with $c.ignoreDifferences }}
+  ignoreDifferences:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   sources:
     {{- if $c.source.gitops }}
     - repoURL: {{ $.Values.gitops.repoURL }}
@@ -59,6 +63,9 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      {{- if $c.ignoreDifferences }}
+      - RespectIgnoreDifferences=true
+      {{- end }}
     retry:
       limit: 20
       backoff:
