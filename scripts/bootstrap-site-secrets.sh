@@ -64,6 +64,11 @@ if ! exists nico-system ssh-host-key; then
   echo "created nico-system/ssh-host-key"
 fi
 
+if ! exists nico-system nico-web-auth; then
+  k -n nico-system create secret generic nico-web-auth --from-literal=password="$(rand)" >/dev/null
+  echo "created nico-system/nico-web-auth"
+fi
+
 if [ -n "${NICO_VAULT_TOKEN:-}" ]; then
   k -n nico-system create secret generic nico-vault-token --from-literal=token="$NICO_VAULT_TOKEN" \
     --dry-run=client -o yaml | k apply -f - >/dev/null

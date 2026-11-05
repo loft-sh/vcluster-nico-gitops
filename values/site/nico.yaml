@@ -10,6 +10,11 @@ global:
       group: cert-manager.io
 nico-api:
   automountServiceAccountToken: false
+  webAuth:
+    basic:
+      existingSecret:
+        name: nico-web-auth
+        key: password
   envFrom:
     vaultToken:
       secretName: nico-vault-token
