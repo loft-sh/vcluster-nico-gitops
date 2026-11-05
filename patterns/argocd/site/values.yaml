@@ -18,7 +18,7 @@ components:
 - name: vcluster-platform-agent
   releaseName: vcluster-platform-agent
   namespace: vcluster-platform
-  wave: 2
+  wave: 1
   serverSideDiff: true
   source:
     repoURL: https://charts.loft.sh

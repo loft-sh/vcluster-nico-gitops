@@ -85,7 +85,7 @@ COMPONENTS = {
     ],
     "site": [
         dict(name="vcluster-platform-agent", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
-             deps=["nico-site-agent"], defaults=True, disableWait=True),
+             wave_with="nico-site-agent", defaults=True, disableWait=True),
         dict(name="nico", repo=("nico", "nico", NICO), ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
              settings=[("vaultAddr", "nico-api.vaultClusterInfo.VAULT_SERVICE"),
                        ("vaultKvMount", "nico-api.vaultClusterInfo.NICO_VAULT_MOUNT"),
