@@ -5,7 +5,7 @@ argocd_install() {
   local ctx=$1
   helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
   helm --kube-context "$ctx" install argocd argo/argo-cd --version "$ARGO_VERSION" -n argocd --create-namespace --wait \
-    --set dex.enabled=false --set notifications.enabled=false --set applicationSet.replicas=0 >/dev/null
+    -f "$ROOT/test/e2e/argocd-values.yaml" >/dev/null
   kubectl --context "$ctx" -n argocd apply -f - >/dev/null <<YAML
 apiVersion: v1
 kind: Secret

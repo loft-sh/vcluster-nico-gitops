@@ -34,6 +34,26 @@ Sites need outbound 443, 8100 and 7233 to these.
 
    Give it a long lifetime. Vault's default is 32 days.
 
+## Argo CD
+
+The layers order their Applications with sync waves. Argo CD only waits for an Application to be healthy if it checks Application health, so add this to `argocd-cm`. Without it, a layer can sync before cert-manager is ready and stall.
+
+```yaml
+resource.customizations.health.argoproj.io_Application: |
+  hs = {}
+  hs.status = "Progressing"
+  hs.message = ""
+  if obj.status ~= nil then
+    if obj.status.health ~= nil then
+      hs.status = obj.status.health.status
+      if obj.status.health.message ~= nil then
+        hs.message = obj.status.health.message
+      end
+    end
+  end
+  return hs
+```
+
 ## Licence
 
 The vCluster Platform licence must include NICo nodes. Pass it as `LICENSE_TOKEN` to `scripts/bootstrap-global-secrets.sh`.

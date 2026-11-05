@@ -26,6 +26,8 @@ spec:
     remediation:
       retries: 3
     disableWait: true
+  dependsOn:
+  - name: nico-site-agent
   valuesFrom:
   - kind: ConfigMap
     name: gitops-defaults-vcluster-platform-agent
