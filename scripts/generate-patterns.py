@@ -7,7 +7,7 @@ R = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.pat
 V = yaml.safe_load(open(f"{R}/versions.yaml"))
 
 NICO_SOURCE = {"kind": "GitRepository", "name": "nico-charts"}
-BLUEPRINT = {"kind": "GitRepository", "name": "vcluster-nico-blueprints"}
+GITOPS = {"kind": "GitRepository", "name": "vcluster-nico-gitops"}
 
 def helm_repo(name, url, oci=False):
     spec = {"interval": "1h", "url": url}
@@ -41,22 +41,22 @@ CERT_MANAGER = dict(name="cert-manager", repo=("jetstack", "cert-manager", V["ce
 COMPONENTS = {
     "global": [
         CERT_MANAGER,
-        dict(name="global-prereqs", blueprint="./charts/global-prereqs", ns="nico-rest", deps=["cert-manager"],
+        dict(name="global-prereqs", gitops="./charts/global-prereqs", ns="nico-rest", deps=["cert-manager"],
              settings=[("storageClass", "postgres.storageClass")]),
         dict(name="temporal", git="./rest-api/temporal-helm/temporal", ns="temporal", deps=["global-prereqs"], defaults=True,
              valuesFiles=["./rest-api/temporal-helm/temporal/values.yaml", "./rest-api/temporal-helm/temporal/values-kind.yaml"]),
-        dict(name="temporal-namespaces", blueprint="./charts/temporal-namespaces", ns="temporal", deps=["temporal"]),
+        dict(name="temporal-namespaces", gitops="./charts/temporal-namespaces", ns="temporal", deps=["temporal"]),
         dict(name="nico-rest", git="./helm/rest/nico-rest", ns="nico-rest", deps=["temporal-namespaces"], defaults=True,
              settings=[("platformOidcIssuer", "nico-rest-api.config.issuers[0].issuer"),
                        ("siteManagerHost", "nico-rest-site-manager.certificate.dnsNames[5]")]),
         dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
              deps=["cert-manager"], defaults=True, settings=[("platformHost", "config.loftHost")]),
-        dict(name="nico-provider", blueprint="./charts/nico-provider", ns="vcluster-platform",
+        dict(name="nico-provider", gitops="./charts/nico-provider", ns="vcluster-platform",
              deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
     ],
     "site-base": [
         CERT_MANAGER,
-        dict(name="site-prereqs", blueprint="./charts/site-prereqs", ns="nico-system", deps=["cert-manager"],
+        dict(name="site-prereqs", gitops="./charts/site-prereqs", ns="nico-system", deps=["cert-manager"],
              settings=[("vaultAddr", "vault.address"), ("vaultPkiMount", "vault.pkiMount"), ("vaultPkiRole", "vault.pkiRole"),
                        ("vaultCertManagerAuthMount", "vault.certManager.authMount"),
                        ("vaultCertManagerRole", "vault.certManager.role"), ("storageClass", "postgres.storageClass")]),
@@ -65,7 +65,7 @@ COMPONENTS = {
         dict(name="argo-cd", repo=("argo", "argo-cd", V["dpf"]["argo-cd"]), ns="dpf-operator-system", defaults=True),
         dict(name="kamaji", repo=("nvidia-charts", "kamaji", V["dpf"]["kamaji"]), ns="dpf-operator-system", deps=["cert-manager"],
              defaults=True, disableWait=True),
-        dict(name="kamaji-datastore", blueprint="./charts/kamaji-datastore", ns="dpf-operator-system", deps=["kamaji"],
+        dict(name="kamaji-datastore", gitops="./charts/kamaji-datastore", ns="dpf-operator-system", deps=["kamaji"],
              wave_with="kamaji"),
         dict(name="maintenance-operator", repo=("mellanox", "maintenance-operator-chart", V["dpf"]["maintenance-operator"]), ns="dpf-operator-system",
              deps=["cert-manager"], defaults=True),
@@ -73,7 +73,7 @@ COMPONENTS = {
              defaults=True),
         dict(name="dpf-operator", repo=("doca", "dpf-operator", V["dpf"]["operator"]), ns="dpf-operator-system", defaults=True,
              deps=["argo-cd", "kamaji-datastore", "maintenance-operator", "node-feature-discovery"]),
-        dict(name="dpf-config", blueprint="./charts/dpf-config", ns="dpf-operator-system", deps=["dpf-operator"],
+        dict(name="dpf-config", gitops="./charts/dpf-config", ns="dpf-operator-system", deps=["dpf-operator"],
              settings=[("dpfApiServerVip", "apiServer.vip"), ("dpfApiServerPort", "apiServer.port"),
                        ("dpuClusterInterface", "dpuCluster.keepalived.interface"),
                        ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
@@ -107,13 +107,13 @@ def release(c):
         if c.get("valuesFiles"):
             chart_spec["valuesFiles"] = c["valuesFiles"]
     else:
-        chart_spec = {"chart": c["blueprint"], "reconcileStrategy": "Revision", "sourceRef": dict(BLUEPRINT)}
+        chart_spec = {"chart": c["gitops"], "reconcileStrategy": "Revision", "sourceRef": dict(GITOPS)}
     values_from = []
     if c.get("defaults"):
-        values_from.append({"kind": "ConfigMap", "name": f"blueprint-defaults-{c['name']}", "valuesKey": "values.yaml"})
+        values_from.append({"kind": "ConfigMap", "name": f"gitops-defaults-{c['name']}", "valuesKey": "values.yaml"})
     for key, path in c.get("settings", []):
-        values_from.append({"kind": "ConfigMap", "name": "blueprint-settings", "valuesKey": key, "targetPath": path})
-    values_from.append({"kind": "ConfigMap", "name": f"blueprint-overrides-{c['name']}", "valuesKey": "values.yaml",
+        values_from.append({"kind": "ConfigMap", "name": "gitops-settings", "valuesKey": key, "targetPath": path})
+    values_from.append({"kind": "ConfigMap", "name": f"gitops-overrides-{c['name']}", "valuesKey": "values.yaml",
                         "optional": True})
     timeout = c.get("timeout", "15m")
     spec = {
@@ -168,9 +168,9 @@ def argo_component(c, wave):
         out["source"] = {"nico": True, "path": c["git"].lstrip("./")}
         value_files += [f.split("/")[-1] for f in c.get("valuesFiles", [])]
     else:
-        out["source"] = {"blueprint": True, "path": c["blueprint"].lstrip("./")}
+        out["source"] = {"gitops": True, "path": c["gitops"].lstrip("./")}
     if c.get("defaults"):
-        value_files.append(f"$blueprint/values/{{scope}}/{c['name']}.yaml")
+        value_files.append(f"$gitops/values/{{scope}}/{c['name']}.yaml")
     value_files.append(f"$env/{{path}}/overrides/{c['name']}.yaml")
     out["valueFiles"] = value_files
     if c.get("settings"):
@@ -197,7 +197,7 @@ for scope in COMPONENTS:
         a["valueFiles"] = [v.replace("{scope}", scope) for v in a["valueFiles"]]
         comps.append(a)
     values = {
-        "blueprint": {"repoURL": "https://github.com/example-org/vcluster-nico-blueprints.git", "targetRevision": "v0.1.0"},
+        "gitops": {"repoURL": "https://github.com/example-org/vcluster-nico-gitops.git", "targetRevision": "v0.1.0"},
         "environment": {"repoURL": "https://github.com/example-org/nico-environments.git", "targetRevision": "main",
                         "path": f"clusters/{'global' if scope == 'global' else 'site-1'}/nico"},
         "nico": {"repoURL": NICO_GIT["spec"]["url"] + ".git", "targetRevision": NICO_GIT["spec"]["ref"]["tag"]},
@@ -213,7 +213,7 @@ for scope in COMPONENTS:
         yaml.safe_dump(values, f, sort_keys=False)
     with open(f"{R}/patterns/argocd/{scope}/Chart.yaml", "w") as f:
         yaml.safe_dump({"apiVersion": "v2", "name": f"nico-{scope}-apps",
-                        "description": f"Argo CD applications for the {SCOPE_TITLE[scope]} blueprint",
+                        "description": f"Argo CD applications for the {SCOPE_TITLE[scope]}",
                         "type": "application", "version": "0.1.0", "appVersion": "2.4.0-rc.5"}, f, sort_keys=False)
     print("argocd", scope, [(c["name"], c["wave"]) for c in comps])
 
@@ -223,7 +223,7 @@ for scope in COMPONENTS:
         continue
     kust = {"apiVersion": "kustomize.config.k8s.io/v1beta1", "kind": "Kustomization", "namespace": "flux-system",
             "generatorOptions": {"disableNameSuffixHash": True, "labels": {"reconcile.fluxcd.io/watch": "Enabled"}},
-            "configMapGenerator": [{"name": f"blueprint-defaults-{n}", "files": [f"values.yaml={n}.yaml"]} for n in files]}
+            "configMapGenerator": [{"name": f"gitops-defaults-{n}", "files": [f"values.yaml={n}.yaml"]} for n in files]}
     with open(f"{R}/values/{scope}/kustomization.yaml", "w") as f:
         yaml.safe_dump(kust, f, sort_keys=False)
 

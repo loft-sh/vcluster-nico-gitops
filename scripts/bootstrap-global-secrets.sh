@@ -5,7 +5,7 @@ usage() {
   cat >&2 <<'EOF'
 usage: scripts/bootstrap-global-secrets.sh --context <kube-context> [--ca-cert <pem> --ca-key <pem>]
 
-Creates the namespaces and Secrets the global control plane blueprint expects.
+Creates the namespaces and Secrets the global control plane expects.
 Existing Secrets are left unchanged, so the script is safe to re-run.
 
   --ca-cert, --ca-key   bring your own REST CA; otherwise a self-signed RSA 4096 CA is generated

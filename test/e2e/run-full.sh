@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-: "${BLUEPRINT_URL:?}" "${BLUEPRINT_BRANCH:?}" "${BLUEPRINT_COMMIT:?}" "${GIT_TOKEN:?}"
+: "${GITOPS_URL:?}" "${GITOPS_BRANCH:?}" "${GITOPS_COMMIT:?}" "${GIT_TOKEN:?}"
 G=kind-nico-global
 S=kind-nico-site
 ORG=vcluster-autonodes
@@ -38,14 +38,14 @@ metadata:
 EOF
 
 render() {
-  kubectl kustomize "$1" | sed -e "s|BLUEPRINT_URL|$BLUEPRINT_URL|g" -e "s|BLUEPRINT_BRANCH|$BLUEPRINT_BRANCH|g" \
-    -e "s|BLUEPRINT_COMMIT|$BLUEPRINT_COMMIT|g" -e "s|PLATFORM_IP|$PLATFORM_IP|g" -e "s|TEMPORAL_IP|$TEMPORAL_IP|g" \
+  kubectl kustomize "$1" | sed -e "s|GITOPS_URL|$GITOPS_URL|g" -e "s|GITOPS_BRANCH|$GITOPS_BRANCH|g" \
+    -e "s|GITOPS_COMMIT|$GITOPS_COMMIT|g" -e "s|PLATFORM_IP|$PLATFORM_IP|g" -e "s|TEMPORAL_IP|$TEMPORAL_IP|g" \
     -e "s|SITE_MANAGER_IP|$SITE_MANAGER_IP|g" -e "s|SITE_MANAGER_HOST|$SITE_MANAGER_HOST|g"
 }
 
 for c in "$G" "$S"; do
   flux install --context "$c" --components=source-controller,kustomize-controller,helm-controller
-  flux create secret git blueprint-auth --context "$c" -n flux-system --url="$BLUEPRINT_URL" --username=x-access-token --password="$GIT_TOKEN"
+  flux create secret git gitops-auth --context "$c" -n flux-system --url="$GITOPS_URL" --username=x-access-token --password="$GIT_TOKEN"
 done
 
 "$ROOT/scripts/bootstrap-global-secrets.sh" --context "$G"
@@ -73,10 +73,10 @@ REG=$(NICO_TOKEN=$(token) "$ROOT/scripts/register-site.sh" --global-context "$G"
   --name e2e --rest-url http://127.0.0.1:18388 --creds-url "https://$SITE_MANAGER_HOST:8100/v1/sitecreds")
 echo "$REG"
 SITE_ID=$(echo "$REG" | awk '/^siteId:/ {print $2}')
-kubectl --context "$S" -n flux-system patch configmap blueprint-settings --type merge -p "{\"data\":{\"siteId\":\"$SITE_ID\"}}"
+kubectl --context "$S" -n flux-system patch configmap gitops-settings --type merge -p "{\"data\":{\"siteId\":\"$SITE_ID\"}}"
 
 if [ -n "${LICENSE_TOKEN:-}" ]; then
-  kubectl --context "$G" -n flux-system patch configmap blueprint-overrides-nico-provider --type merge \
+  kubectl --context "$G" -n flux-system patch configmap gitops-overrides-nico-provider --type merge \
     -p "{\"data\":{\"values.yaml\":\"sites:\\n  - name: nico-e2e\\n    siteId: $SITE_ID\\n\"}}"
 fi
 

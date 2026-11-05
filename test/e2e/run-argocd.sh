@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-: "${BLUEPRINT_URL:?}" "${BLUEPRINT_COMMIT:?}" "${GIT_TOKEN:?}"
+: "${GITOPS_URL:?}" "${GITOPS_COMMIT:?}" "${GIT_TOKEN:?}"
 CTX=$(kubectl config current-context)
-REPO=$BLUEPRINT_URL.git
+REPO=$GITOPS_URL.git
 ENV_PATH=test/e2e/argocd/site/nico
 ARGO_VERSION=$(awk '/^dpf:/ {f = 1} f && $1 == "argo-cd:" {print $2; exit}' "$ROOT/versions.yaml")
 
@@ -16,7 +16,7 @@ kubectl -n argocd apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vcluster-nico-blueprints
+  name: vcluster-nico-gitops
   labels:
     argocd.argoproj.io/secret-type: repository
 stringData:
@@ -45,21 +45,21 @@ spec:
     namespace: argocd
   sources:
     - repoURL: $REPO
-      targetRevision: $BLUEPRINT_COMMIT
+      targetRevision: $GITOPS_COMMIT
       path: patterns/argocd/$1
       helm:
         valueFiles:
           - \$env/$ENV_PATH/settings.yaml
         valuesObject:
-          blueprint:
+          gitops:
             repoURL: $REPO
-            targetRevision: $BLUEPRINT_COMMIT
+            targetRevision: $GITOPS_COMMIT
           environment:
             repoURL: $REPO
-            targetRevision: $BLUEPRINT_COMMIT
+            targetRevision: $GITOPS_COMMIT
             path: $ENV_PATH
     - repoURL: $REPO
-      targetRevision: $BLUEPRINT_COMMIT
+      targetRevision: $GITOPS_COMMIT
       ref: env
   syncPolicy:
     automated:

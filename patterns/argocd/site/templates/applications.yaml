@@ -20,9 +20,9 @@ spec:
     - repoURL: {{ $.Values.nico.repoURL }}
       targetRevision: {{ $.Values.nico.targetRevision }}
       path: {{ $c.source.path }}
-    {{- else if $c.source.blueprint }}
-    - repoURL: {{ $.Values.blueprint.repoURL }}
-      targetRevision: {{ $.Values.blueprint.targetRevision }}
+    {{- else if $c.source.gitops }}
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
       path: {{ $c.source.path }}
     {{- else }}
     - repoURL: {{ $c.source.repoURL }}
@@ -48,9 +48,9 @@ spec:
         valuesObject:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-    - repoURL: {{ $.Values.blueprint.repoURL }}
-      targetRevision: {{ $.Values.blueprint.targetRevision }}
-      ref: blueprint
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
+      ref: gitops
     - repoURL: {{ $.Values.environment.repoURL }}
       targetRevision: {{ $.Values.environment.targetRevision }}
       ref: env

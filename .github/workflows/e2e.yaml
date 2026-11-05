@@ -19,9 +19,9 @@ jobs:
       matrix:
         env: [site, site-dpu]
     env:
-      BLUEPRINT_URL: https://github.com/${{ github.repository }}
-      BLUEPRINT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      BLUEPRINT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GITOPS_URL: https://github.com/${{ github.repository }}
+      GITOPS_BRANCH: ${{ github.head_ref || github.ref_name }}
+      GITOPS_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       GIT_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -38,7 +38,7 @@ jobs:
       - uses: fluxcd/flux2/action@v2.10.0
         with:
           version: 2.10.0
-      - name: Deploy the blueprint and check it
+      - name: Deploy the site and check it
         run: test/e2e/run.sh ${{ matrix.env }}
       - name: Diagnostics
         if: failure()
@@ -49,9 +49,9 @@ jobs:
     runs-on: large-16_64
     timeout-minutes: 150
     env:
-      BLUEPRINT_URL: https://github.com/${{ github.repository }}
-      BLUEPRINT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      BLUEPRINT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GITOPS_URL: https://github.com/${{ github.repository }}
+      GITOPS_BRANCH: ${{ github.head_ref || github.ref_name }}
+      GITOPS_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       GIT_TOKEN: ${{ github.token }}
       LICENSE_TOKEN: ${{ secrets.VCLUSTER_LICENSE_TOKEN }}
     steps:
@@ -79,8 +79,8 @@ jobs:
     runs-on: large-16_64
     timeout-minutes: 120
     env:
-      BLUEPRINT_URL: https://github.com/${{ github.repository }}
-      BLUEPRINT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GITOPS_URL: https://github.com/${{ github.repository }}
+      GITOPS_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       GIT_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7.0.1

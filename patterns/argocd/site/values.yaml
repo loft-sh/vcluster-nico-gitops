@@ -1,5 +1,5 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
@@ -25,7 +25,7 @@ components:
     nico: true
     path: helm
   valueFiles:
-  - $blueprint/values/site/nico.yaml
+  - $gitops/values/site/nico.yaml
   - $env/{path}/overrides/nico.yaml
   settings:
   - key: vaultAddr
@@ -42,7 +42,7 @@ components:
     nico: true
     path: helm/rest/nico-rest-site-agent
   valueFiles:
-  - $blueprint/values/site/nico-site-agent.yaml
+  - $gitops/values/site/nico-site-agent.yaml
   - $env/{path}/overrides/nico-site-agent.yaml
   settings:
   - key: siteId

@@ -6,18 +6,18 @@ generatorOptions:
   labels:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
-- name: blueprint-defaults-argo-cd
+- name: gitops-defaults-argo-cd
   files:
   - values.yaml=argo-cd.yaml
-- name: blueprint-defaults-kamaji
+- name: gitops-defaults-kamaji
   files:
   - values.yaml=kamaji.yaml
-- name: blueprint-defaults-maintenance-operator
+- name: gitops-defaults-maintenance-operator
   files:
   - values.yaml=maintenance-operator.yaml
-- name: blueprint-defaults-node-feature-discovery
+- name: gitops-defaults-node-feature-discovery
   files:
   - values.yaml=node-feature-discovery.yaml
-- name: blueprint-defaults-dpf-operator
+- name: gitops-defaults-dpf-operator
   files:
   - values.yaml=dpf-operator.yaml

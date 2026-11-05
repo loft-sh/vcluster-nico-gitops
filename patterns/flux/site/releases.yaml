@@ -28,22 +28,22 @@ spec:
   - name: site-prereqs
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-nico
+    name: gitops-defaults-nico
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultAddr
     targetPath: nico-api.vaultClusterInfo.VAULT_SERVICE
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultKvMount
     targetPath: nico-api.vaultClusterInfo.NICO_VAULT_MOUNT
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultPkiMount
     targetPath: nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT
   - kind: ConfigMap
-    name: blueprint-overrides-nico
+    name: gitops-overrides-nico
     valuesKey: values.yaml
     optional: true
 ---
@@ -79,21 +79,21 @@ spec:
   - name: nico
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-nico-site-agent
+    name: gitops-defaults-nico-site-agent
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: siteId
     targetPath: envConfig.CLUSTER_ID
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: siteId
     targetPath: envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: temporalHost
     targetPath: envConfig.TEMPORAL_HOST
   - kind: ConfigMap
-    name: blueprint-overrides-nico-site-agent
+    name: gitops-overrides-nico-site-agent
     valuesKey: values.yaml
     optional: true

@@ -26,10 +26,10 @@ spec:
       retries: 3
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-argo-cd
+    name: gitops-defaults-argo-cd
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-argo-cd
+    name: gitops-overrides-argo-cd
     valuesKey: values.yaml
     optional: true
 ---
@@ -65,10 +65,10 @@ spec:
   - name: cert-manager
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-kamaji
+    name: gitops-defaults-kamaji
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-kamaji
+    name: gitops-overrides-kamaji
     valuesKey: values.yaml
     optional: true
 ---
@@ -88,7 +88,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -102,7 +102,7 @@ spec:
   - name: kamaji
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-overrides-kamaji-datastore
+    name: gitops-overrides-kamaji-datastore
     valuesKey: values.yaml
     optional: true
 ---
@@ -136,10 +136,10 @@ spec:
   - name: cert-manager
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-maintenance-operator
+    name: gitops-defaults-maintenance-operator
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-maintenance-operator
+    name: gitops-overrides-maintenance-operator
     valuesKey: values.yaml
     optional: true
 ---
@@ -171,10 +171,10 @@ spec:
       retries: 3
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-node-feature-discovery
+    name: gitops-defaults-node-feature-discovery
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-node-feature-discovery
+    name: gitops-overrides-node-feature-discovery
     valuesKey: values.yaml
     optional: true
 ---
@@ -211,10 +211,10 @@ spec:
   - name: node-feature-discovery
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-dpf-operator
+    name: gitops-defaults-dpf-operator
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-dpf-operator
+    name: gitops-overrides-dpf-operator
     valuesKey: values.yaml
     optional: true
 ---
@@ -234,7 +234,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -248,22 +248,22 @@ spec:
   - name: dpf-operator
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: dpfApiServerVip
     targetPath: apiServer.vip
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: dpfApiServerPort
     targetPath: apiServer.port
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: dpuClusterInterface
     targetPath: dpuCluster.keepalived.interface
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: dpuClusterVip
     targetPath: dpuCluster.keepalived.vip
   - kind: ConfigMap
-    name: blueprint-overrides-dpf-config
+    name: gitops-overrides-dpf-config
     valuesKey: values.yaml
     optional: true

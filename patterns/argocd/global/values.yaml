@@ -1,5 +1,5 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
@@ -35,7 +35,7 @@ components:
   namespace: nico-rest
   wave: 1
   source:
-    blueprint: true
+    gitops: true
     path: charts/global-prereqs
   valueFiles:
   - $env/{path}/overrides/global-prereqs.yaml
@@ -52,14 +52,14 @@ components:
   valueFiles:
   - values.yaml
   - values-kind.yaml
-  - $blueprint/values/global/temporal.yaml
+  - $gitops/values/global/temporal.yaml
   - $env/{path}/overrides/temporal.yaml
 - name: temporal-namespaces
   releaseName: temporal-namespaces
   namespace: temporal
   wave: 3
   source:
-    blueprint: true
+    gitops: true
     path: charts/temporal-namespaces
   valueFiles:
   - $env/{path}/overrides/temporal-namespaces.yaml
@@ -71,7 +71,7 @@ components:
     nico: true
     path: helm/rest/nico-rest
   valueFiles:
-  - $blueprint/values/global/nico-rest.yaml
+  - $gitops/values/global/nico-rest.yaml
   - $env/{path}/overrides/nico-rest.yaml
   settings:
   - key: platformOidcIssuer
@@ -87,7 +87,7 @@ components:
     chart: vcluster-platform
     targetRevision: 5.0.0-rc.1
   valueFiles:
-  - $blueprint/values/global/vcluster-platform.yaml
+  - $gitops/values/global/vcluster-platform.yaml
   - $env/{path}/overrides/vcluster-platform.yaml
   settings:
   - key: platformHost
@@ -97,7 +97,7 @@ components:
   namespace: vcluster-platform
   wave: 5
   source:
-    blueprint: true
+    gitops: true
     path: charts/nico-provider
   valueFiles:
   - $env/{path}/overrides/nico-provider.yaml

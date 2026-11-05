@@ -1,5 +1,5 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
@@ -35,7 +35,7 @@ components:
   namespace: nico-system
   wave: 1
   source:
-    blueprint: true
+    gitops: true
     path: charts/site-prereqs
   valueFiles:
   - $env/{path}/overrides/site-prereqs.yaml

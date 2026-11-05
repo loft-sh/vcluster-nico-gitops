@@ -29,7 +29,7 @@ spec:
       enabled: true
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-overrides-cert-manager
+    name: gitops-overrides-cert-manager
     valuesKey: values.yaml
     optional: true
 ---
@@ -49,7 +49,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -63,11 +63,11 @@ spec:
   - name: cert-manager
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: storageClass
     targetPath: postgres.storageClass
   - kind: ConfigMap
-    name: blueprint-overrides-global-prereqs
+    name: gitops-overrides-global-prereqs
     valuesKey: values.yaml
     optional: true
 ---
@@ -104,10 +104,10 @@ spec:
   - name: global-prereqs
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-temporal
+    name: gitops-defaults-temporal
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-overrides-temporal
+    name: gitops-overrides-temporal
     valuesKey: values.yaml
     optional: true
 ---
@@ -127,7 +127,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -141,7 +141,7 @@ spec:
   - name: temporal
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-overrides-temporal-namespaces
+    name: gitops-overrides-temporal-namespaces
     valuesKey: values.yaml
     optional: true
 ---
@@ -175,18 +175,18 @@ spec:
   - name: temporal-namespaces
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-nico-rest
+    name: gitops-defaults-nico-rest
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: platformOidcIssuer
     targetPath: nico-rest-api.config.issuers[0].issuer
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: siteManagerHost
     targetPath: nico-rest-site-manager.certificate.dnsNames[5]
   - kind: ConfigMap
-    name: blueprint-overrides-nico-rest
+    name: gitops-overrides-nico-rest
     valuesKey: values.yaml
     optional: true
 ---
@@ -220,14 +220,14 @@ spec:
   - name: cert-manager
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-vcluster-platform
+    name: gitops-defaults-vcluster-platform
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: platformHost
     targetPath: config.loftHost
   - kind: ConfigMap
-    name: blueprint-overrides-vcluster-platform
+    name: gitops-overrides-vcluster-platform
     valuesKey: values.yaml
     optional: true
 ---
@@ -247,7 +247,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -262,10 +262,10 @@ spec:
   - name: nico-rest
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: nicoOrg
     targetPath: org
   - kind: ConfigMap
-    name: blueprint-overrides-nico-provider
+    name: gitops-overrides-nico-provider
     valuesKey: values.yaml
     optional: true

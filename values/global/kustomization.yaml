@@ -6,12 +6,12 @@ generatorOptions:
   labels:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
-- name: blueprint-defaults-temporal
+- name: gitops-defaults-temporal
   files:
   - values.yaml=temporal.yaml
-- name: blueprint-defaults-nico-rest
+- name: gitops-defaults-nico-rest
   files:
   - values.yaml=nico-rest.yaml
-- name: blueprint-defaults-vcluster-platform
+- name: gitops-defaults-vcluster-platform
   files:
   - values.yaml=vcluster-platform.yaml

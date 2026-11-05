@@ -1,5 +1,5 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
@@ -28,7 +28,7 @@ components:
     chart: argo-cd
     targetRevision: 9.4.1
   valueFiles:
-  - $blueprint/values/site-dpu/argo-cd.yaml
+  - $gitops/values/site-dpu/argo-cd.yaml
   - $env/{path}/overrides/argo-cd.yaml
 - name: kamaji
   releaseName: kamaji
@@ -39,14 +39,14 @@ components:
     chart: kamaji
     targetRevision: 1.2.0
   valueFiles:
-  - $blueprint/values/site-dpu/kamaji.yaml
+  - $gitops/values/site-dpu/kamaji.yaml
   - $env/{path}/overrides/kamaji.yaml
 - name: kamaji-datastore
   releaseName: kamaji-datastore
   namespace: dpf-operator-system
   wave: 0
   source:
-    blueprint: true
+    gitops: true
     path: charts/kamaji-datastore
   valueFiles:
   - $env/{path}/overrides/kamaji-datastore.yaml
@@ -59,7 +59,7 @@ components:
     chart: maintenance-operator-chart
     targetRevision: 0.3.0
   valueFiles:
-  - $blueprint/values/site-dpu/maintenance-operator.yaml
+  - $gitops/values/site-dpu/maintenance-operator.yaml
   - $env/{path}/overrides/maintenance-operator.yaml
 - name: node-feature-discovery
   releaseName: node-feature-discovery
@@ -70,7 +70,7 @@ components:
     chart: node-feature-discovery
     targetRevision: 0.18.3
   valueFiles:
-  - $blueprint/values/site-dpu/node-feature-discovery.yaml
+  - $gitops/values/site-dpu/node-feature-discovery.yaml
   - $env/{path}/overrides/node-feature-discovery.yaml
 - name: dpf-operator
   releaseName: dpf-operator
@@ -81,14 +81,14 @@ components:
     chart: dpf-operator
     targetRevision: v26.4.0
   valueFiles:
-  - $blueprint/values/site-dpu/dpf-operator.yaml
+  - $gitops/values/site-dpu/dpf-operator.yaml
   - $env/{path}/overrides/dpf-operator.yaml
 - name: dpf-config
   releaseName: dpf-config
   namespace: dpf-operator-system
   wave: 2
   source:
-    blueprint: true
+    gitops: true
     path: charts/dpf-config
   valueFiles:
   - $env/{path}/overrides/dpf-config.yaml
