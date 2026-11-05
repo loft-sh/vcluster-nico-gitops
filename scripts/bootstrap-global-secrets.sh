@@ -82,8 +82,8 @@ else
       -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" 2>/dev/null
   fi
   for ns in nico-rest cert-manager; do
-    k -n "$ns" create secret tls ca-signing-secret --cert="$WORK/ca.crt" --key="$WORK/ca.key" >/dev/null
-    echo "created $ns/ca-signing-secret"
+    k -n "$ns" create secret tls ca-signing-secret --cert="$WORK/ca.crt" --key="$WORK/ca.key" --dry-run=client -o yaml | k apply -f - >/dev/null
+    echo "stored $ns/ca-signing-secret"
   done
 fi
 
