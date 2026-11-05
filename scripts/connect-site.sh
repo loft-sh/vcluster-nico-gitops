@@ -43,6 +43,10 @@ kubectl --context "$SITE" get namespace vcluster-platform >/dev/null 2>&1 || kub
 jq -n --argjson k "$KEY" '{apiVersion: "v1", kind: "Secret", metadata: {name: "vcluster-platform-agent", namespace: "vcluster-platform"},
   stringData: {token: $k.accessKey, url: $k.loftHost}}' | kubectl --context "$SITE" apply -f - >/dev/null
 echo "stored vcluster-platform/vcluster-platform-agent on the site"
+if kubectl --context "$SITE" -n vcluster-platform get deploy loft >/dev/null 2>&1; then
+  kubectl --context "$SITE" -n vcluster-platform rollout restart deploy/loft >/dev/null
+  echo "restarted the Platform agent so it connects now"
+fi
 if [ "$(jq -r .insecure <<<"$KEY")" = true ]; then
   echo "the Platform reports an untrusted certificate: set insecureSkipVerify: true in overrides/vcluster-platform-agent.yaml, or give the Platform a trusted one"
 fi
