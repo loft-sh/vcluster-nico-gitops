@@ -68,18 +68,22 @@ spec:
 EOF
 }
 
-healthy() {
-  for _ in $(seq 1 60); do kubectl -n argocd get "application/$1" >/dev/null 2>&1 && break; sleep 5; done
-  kubectl -n argocd wait "application/$1" --for=jsonpath='{.status.health.status}'=Healthy --timeout="$2"
+synced() {
+  local end=$((SECONDS + $2)) s=
+  until [ "$s" = "Synced Healthy Succeeded" ]; do
+    [ $SECONDS -lt $end ] || { echo "application/$1 not synced: ${s:-missing}"; return 1; }
+    sleep 10
+    s=$(kubectl -n argocd get "application/$1" -o jsonpath='{.status.sync.status} {.status.health.status} {.status.operationState.phase}' 2>/dev/null)
+  done
 }
 
 root site-base | kubectl apply -f -
 echo "waiting for the site-base layer"
-healthy cert-manager 20m
-healthy site-prereqs 20m
+synced cert-manager 1200
+synced site-prereqs 1200
 
 root site | kubectl apply -f -
 echo "waiting for NICo Core"
-healthy nico 40m
+synced nico 2400
 
 MODE=argocd "$ROOT/test/e2e/assert.sh" site

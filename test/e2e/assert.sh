@@ -11,7 +11,7 @@ has() { local name=$1 want=$2; shift 2; out=$("$@" 2>&1); if echo "$out" | grep 
 MODE=${MODE:-flux}
 for app in cert-manager site-prereqs nico; do
   if [ "$MODE" = argocd ]; then
-    check "Application $app Synced and Healthy" kubectl -n argocd wait "application/$app" --for=jsonpath='{.status.health.status}'=Healthy --timeout=60s
+    has "Application $app Synced and Healthy" "^Synced Healthy$" kubectl -n argocd get "application/$app" -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}'
   else
     check "HelmRelease $app Ready" kubectl -n flux-system wait "helmrelease/$app" --for=condition=Ready --timeout=60s
   fi

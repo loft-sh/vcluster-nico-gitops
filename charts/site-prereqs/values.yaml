@@ -29,3 +29,7 @@ postgres:
   credentialsSecret: nico-postgres-credentials
   database: nico
   user: nico
+  tls:
+    enabled: true
+    duration: 720h
+    renewBefore: 360h

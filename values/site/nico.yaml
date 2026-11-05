@@ -25,7 +25,6 @@ nico-api:
     DB_NAME: nico
   migrationJob:
     enabled: true
-    sslMode: disable
   externalService:
     enabled: false
   legacyAlias:

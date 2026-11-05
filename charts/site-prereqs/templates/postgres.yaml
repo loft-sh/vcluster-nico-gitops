@@ -1,6 +1,30 @@
 {{- if .Values.postgres.enabled }}
 {{- $p := .Values.postgres }}
 {{- $ns := .Values.namespaces.nico }}
+{{- if $p.tls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nico-postgres-tls
+  namespace: {{ $ns }}
+spec:
+  secretName: nico-postgres-tls
+  commonName: nico-postgres.{{ $ns }}.svc.cluster.local
+  dnsNames:
+    - nico-postgres.{{ $ns }}.svc.cluster.local
+    - nico-postgres.{{ $ns }}
+    - nico-postgres
+  duration: {{ $p.tls.duration }}
+  renewBefore: {{ $p.tls.renewBefore }}
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ .Values.issuer.name }}
+    group: cert-manager.io
+---
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -45,9 +69,23 @@ spec:
       labels:
         app.kubernetes.io/name: nico-postgres
     spec:
+      {{- if $p.tls.enabled }}
+      initContainers:
+        - name: tls
+          image: {{ $p.image }}
+          command: ["sh", "-c", "install -o postgres -g postgres -m 600 /tls-secret/tls.key /tls/tls.key && install -o postgres -g postgres -m 644 /tls-secret/tls.crt /tls/tls.crt"]
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /tls-secret
+            - name: tls
+              mountPath: /tls
+      {{- end }}
       containers:
         - name: postgres
           image: {{ $p.image }}
+          {{- if $p.tls.enabled }}
+          args: ["postgres", "-c", "ssl=on", "-c", "ssl_cert_file=/tls/tls.crt", "-c", "ssl_key_file=/tls/tls.key"]
+          {{- end }}
           env:
             - name: POSTGRES_USER
               value: postgres
@@ -76,11 +114,47 @@ spec:
               mountPath: /var/lib/postgresql/data
             - name: init
               mountPath: /docker-entrypoint-initdb.d
+            {{- if $p.tls.enabled }}
+            - name: tls
+              mountPath: /tls
+            - name: socket
+              mountPath: /var/run/postgresql
+            {{- end }}
+        {{- if $p.tls.enabled }}
+        - name: tls-reload
+          image: {{ $p.image }}
+          command:
+            - sh
+            - -c
+            - |
+              while sleep 300; do
+                cmp -s /tls-secret/tls.crt /tls/tls.crt && cmp -s /tls-secret/tls.key /tls/tls.key && continue
+                install -o postgres -g postgres -m 600 /tls-secret/tls.key /tls/tls.key
+                install -o postgres -g postgres -m 644 /tls-secret/tls.crt /tls/tls.crt
+                psql -h /var/run/postgresql -U postgres -tAc 'select pg_reload_conf()'
+              done
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /tls-secret
+            - name: tls
+              mountPath: /tls
+            - name: socket
+              mountPath: /var/run/postgresql
+        {{- end }}
       volumes:
         - name: init
           configMap:
             name: nico-postgres-init
             defaultMode: 0555
+        {{- if $p.tls.enabled }}
+        - name: tls-secret
+          secret:
+            secretName: nico-postgres-tls
+        - name: tls
+          emptyDir: {}
+        - name: socket
+          emptyDir: {}
+        {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: data
