@@ -8,7 +8,7 @@ nico-api:
     nicoApiSiteConfig: |
       sitename = "e2e"
       initial_domain_name = "e2e.local"
-      dhcp_servers = ["nico-dhcp.nico-system.svc.cluster.local:67"]
+      dhcp_servers = []
       enable_route_servers = true
       attestation_enabled = false
 

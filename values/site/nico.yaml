@@ -46,5 +46,7 @@ nico-pxe:
     - sh
     - -c
     - set -e; cp -r /aarch64 /apt /forge-boot-artifacts/blobs/internal
+  legacyAlias:
+    enabled: false
 nico-dsx-exchange-consumer:
   enabled: false

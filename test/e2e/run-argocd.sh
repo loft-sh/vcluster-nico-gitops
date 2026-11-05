@@ -69,6 +69,7 @@ EOF
 }
 
 healthy() {
+  for _ in $(seq 1 60); do kubectl -n argocd get "application/$1" >/dev/null 2>&1 && break; sleep 5; done
   kubectl -n argocd wait "application/$1" --for=jsonpath='{.status.health.status}'=Healthy --timeout="$2"
 }
 
