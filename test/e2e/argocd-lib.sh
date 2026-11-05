@@ -57,6 +57,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
 YAML
 }
 
@@ -66,6 +72,6 @@ argocd_synced() {
     [ $SECONDS -lt $end ] || { echo "application/$app not synced: ${s:-missing}"; return 1; }
     sleep 10
     s=$(kubectl --context "$ctx" -n argocd get "application/$app" \
-      -o jsonpath='{.status.sync.status} {.status.health.status} {.status.operationState.phase}' 2>/dev/null)
+      -o jsonpath='{.status.sync.status} {.status.health.status} {.status.operationState.phase}' 2>/dev/null || true)
   done
 }
