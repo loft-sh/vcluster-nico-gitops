@@ -51,6 +51,11 @@ components:
   namespace: nico-rest
   wave: 1
   serverSideDiff: true
+  ignoreDifferences:
+  - kind: Secret
+    name: temporal-client-site-agent-certs
+    jsonPointers:
+    - /data
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico-rest-site-agent

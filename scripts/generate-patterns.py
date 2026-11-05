@@ -92,6 +92,7 @@ COMPONENTS = {
                        ("vaultPkiMount", "nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT")]),
         dict(name="nico-site-agent", release="nico-rest-site-agent", repo=("nico", "nico-rest-site-agent", NICO), ns="nico-rest",
              deps=["nico"], defaults=True, disableWait=True,
+             argoIgnore=[{"kind": "Secret", "name": "temporal-client-site-agent-certs", "jsonPointers": ["/data"]}],
              settings=[("siteId", "envConfig.CLUSTER_ID"), ("siteId", "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE"),
                        ("temporalHost", "envConfig.TEMPORAL_HOST")]),
     ],
