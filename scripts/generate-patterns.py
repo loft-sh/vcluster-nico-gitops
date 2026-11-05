@@ -81,6 +81,8 @@ COMPONENTS = {
                        ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
     ],
     "site": [
+        dict(name="vcluster-platform-agent", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
+             defaults=True, disableWait=True),
         dict(name="nico", repo=("nico", "nico", NICO), ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
              settings=[("vaultAddr", "nico-api.vaultClusterInfo.VAULT_SERVICE"),
                        ("vaultKvMount", "nico-api.vaultClusterInfo.NICO_VAULT_MOUNT"),
@@ -93,7 +95,7 @@ COMPONENTS = {
 }
 
 SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
-                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["nico"]}
+                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["loft", "nico"]}
 SCOPE_TITLE = {"global": "global control plane", "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
                "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
 

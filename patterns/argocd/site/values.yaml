@@ -15,6 +15,17 @@ data: {}
 ociRepositories:
 - ghcr.io/loft-sh/vcluster-platform-nico/charts
 components:
+- name: vcluster-platform-agent
+  releaseName: vcluster-platform-agent
+  namespace: vcluster-platform
+  wave: 0
+  source:
+    repoURL: https://charts.loft.sh
+    chart: vcluster-platform
+    targetRevision: 5.0.0-rc.1
+  valueFiles:
+  - $gitops/values/site/vcluster-platform-agent.yaml
+  - $env/{path}/overrides/vcluster-platform-agent.yaml
 - name: nico
   releaseName: nico
   namespace: nico-system

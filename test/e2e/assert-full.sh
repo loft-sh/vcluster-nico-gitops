@@ -26,6 +26,12 @@ else
   bad "site agent" "$(kubectl --context "$SITE" -n nico-rest logs nico-rest-site-agent-0 --tail=5 2>&1 | tail -2)"
 fi
 
+if kubectl --context "$GLOBAL" wait clusters.management.loft.sh/e2e --for=jsonpath='{.status.phase}'=Initialized --timeout=10m >/dev/null 2>&1; then
+  ok "Platform agent connected the site cluster to the Platform"
+else
+  bad "Platform cluster e2e" "$(kubectl --context "$GLOBAL" get clusters.management.loft.sh e2e -o jsonpath='{.status.phase} {.status.reason} {.status.message}' 2>&1 | tail -c 300)"
+fi
+
 status=""
 for _ in $(seq 1 30); do
   status=$(curl -s -H "Authorization: Bearer $(token)" "$REST/v2/org/$ORG/nico/site/$SITE_ID" | jq -r '"\(.status) \(.isOnline)"')

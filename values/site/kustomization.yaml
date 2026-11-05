@@ -6,6 +6,9 @@ generatorOptions:
   labels:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
+- name: gitops-defaults-vcluster-platform-agent
+  files:
+  - values.yaml=vcluster-platform-agent.yaml
 - name: gitops-defaults-nico
   files:
   - values.yaml=nico.yaml

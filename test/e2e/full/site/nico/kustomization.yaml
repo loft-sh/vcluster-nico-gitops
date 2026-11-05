@@ -12,3 +12,6 @@ configMapGenerator:
 - name: gitops-overrides-nico
   files:
   - values.yaml=overrides/nico.yaml
+- name: gitops-overrides-vcluster-platform-agent
+  files:
+  - values.yaml=overrides/vcluster-platform-agent.yaml

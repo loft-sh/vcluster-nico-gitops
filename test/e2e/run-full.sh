@@ -94,6 +94,7 @@ REG=$(NICO_TOKEN=$(token) "$ROOT/scripts/register-site.sh" --global-context "$G"
   --name e2e --rest-url http://127.0.0.1:18388 --creds-url "https://$SITE_MANAGER_HOST:8100/v1/sitecreds")
 echo "$REG"
 SITE_ID=$(echo "$REG" | awk '/^siteId:/ {print $2}')
+"$ROOT/scripts/connect-site.sh" --global-context "$G" --site-context "$S" --name e2e
 if [ "$MODE" = argocd ]; then
   argocd_root "$S" site test/e2e/full/site/nico "{siteId: \"$SITE_ID\"}"
 else

@@ -12,7 +12,11 @@
      --creds-url https://site-manager.example.com:8100/v1/sitecreds
    ```
 3. Put the printed site ID in the site's `settings.yaml`.
-4. Add the site to the global `nico-provider.yaml` override, with its node types. Instance type IDs come from `GET /v2/org/<org>/nico/instance/type?siteId=<id>`.
+4. Connect the site cluster to the Platform. The site's Platform agent restarts until you do.
+   ```bash
+   scripts/connect-site.sh --global-context <global> --site-context <site> --name <site>
+   ```
+5. Add the site to the global `nico-provider.yaml` override, with its node types. Instance type IDs come from `GET /v2/org/<org>/nico/instance/type?siteId=<id>`.
 
 Don't add a second issuer for the provider org in `nico-rest.yaml`. That reserves the org name and the Platform can no longer use it.
 
