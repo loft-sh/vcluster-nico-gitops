@@ -1,13 +1,10 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
   targetRevision: main
   path: clusters/site-1/nico
-nico:
-  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
-  targetRevision: source/v2.4.0-vcluster.rc5.1
 argocd:
   namespace: argocd
   project: default
@@ -21,6 +18,7 @@ components:
   releaseName: cert-manager
   namespace: cert-manager
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://charts.jetstack.io
     chart: cert-manager
@@ -34,8 +32,9 @@ components:
   releaseName: site-prereqs
   namespace: nico-system
   wave: 1
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/site-prereqs
   valueFiles:
   - $env/{path}/overrides/site-prereqs.yaml

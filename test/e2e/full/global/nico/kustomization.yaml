@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+resources:
+- settings.yaml
+- gitops.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+configMapGenerator:
+- name: gitops-overrides-global-prereqs
+  files:
+  - values.yaml=overrides/global-prereqs.yaml
+- name: gitops-overrides-nico-provider
+  files:
+  - values.yaml=overrides/nico-provider.yaml
+- name: gitops-overrides-temporal
+  files:
+  - values.yaml=overrides/temporal.yaml
+- name: gitops-overrides-vcluster-platform
+  files:
+  - values.yaml=overrides/vcluster-platform.yaml

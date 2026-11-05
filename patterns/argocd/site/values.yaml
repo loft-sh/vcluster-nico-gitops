@@ -1,13 +1,10 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
   targetRevision: main
   path: clusters/site-1/nico
-nico:
-  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
-  targetRevision: source/v2.4.0-vcluster.rc5.1
 argocd:
   namespace: argocd
   project: default
@@ -15,17 +12,32 @@ destination:
   server: https://kubernetes.default.svc
 namePrefix: ''
 data: {}
-ociRepositories: []
+ociRepositories:
+- ghcr.io/loft-sh/vcluster-platform-nico/charts
 components:
+- name: vcluster-platform-agent
+  releaseName: vcluster-platform-agent
+  namespace: vcluster-platform
+  wave: 1
+  serverSideDiff: true
+  source:
+    repoURL: https://charts.loft.sh
+    chart: vcluster-platform
+    targetRevision: 5.0.0-rc.1
+  valueFiles:
+  - $gitops/values/site/vcluster-platform-agent.yaml
+  - $env/{path}/overrides/vcluster-platform-agent.yaml
 - name: nico
   releaseName: nico
   namespace: nico-system
   wave: 0
+  serverSideDiff: true
   source:
-    nico: true
-    path: helm
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: nico
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
-  - $blueprint/values/site/nico.yaml
+  - $gitops/values/site/nico.yaml
   - $env/{path}/overrides/nico.yaml
   settings:
   - key: vaultAddr
@@ -38,11 +50,18 @@ components:
   releaseName: nico-rest-site-agent
   namespace: nico-rest
   wave: 1
+  serverSideDiff: true
+  ignoreDifferences:
+  - kind: Secret
+    name: temporal-client-site-agent-certs
+    jsonPointers:
+    - /data
   source:
-    nico: true
-    path: helm/rest/nico-rest-site-agent
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: nico-rest-site-agent
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
-  - $blueprint/values/site/nico-site-agent.yaml
+  - $gitops/values/site/nico-site-agent.yaml
   - $env/{path}/overrides/nico-site-agent.yaml
   settings:
   - key: siteId

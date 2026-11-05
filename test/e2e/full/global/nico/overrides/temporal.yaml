@@ -1,0 +1,5 @@
+server:
+  frontend:
+    externalService:
+      annotations:
+        metallb.io/loadBalancerIPs: 172.18.255.202

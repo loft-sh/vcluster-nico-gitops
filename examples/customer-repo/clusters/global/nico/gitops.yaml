@@ -1,0 +1,25 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: vcluster-nico-gitops
+  namespace: flux-system
+spec:
+  interval: 10m
+  url: https://github.com/loft-sh/vcluster-nico-gitops
+  ref:
+    tag: v0.1.0
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: nico-global
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./patterns/flux/global
+  prune: true
+  wait: false
+  timeout: 30m
+  sourceRef:
+    kind: GitRepository
+    name: vcluster-nico-gitops

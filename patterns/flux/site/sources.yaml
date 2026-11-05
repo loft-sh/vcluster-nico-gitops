@@ -1,17 +1,18 @@
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
+kind: HelmRepository
 metadata:
-  name: nico-charts
+  name: loft
   namespace: flux-system
 spec:
   interval: 1h
-  url: https://github.com/loft-sh/vcluster-platform-nico
-  ref:
-    tag: source/v2.4.0-vcluster.rc5.1
-  ignore: '/*
-
-    !/helm/
-
-    !/rest-api/temporal-helm/
-
-    '
+  url: https://charts.loft.sh
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: nico
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/loft-sh/vcluster-platform-nico/charts
+  type: oci

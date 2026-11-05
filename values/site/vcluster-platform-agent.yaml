@@ -1,0 +1,3 @@
+agentOnly: true
+tokenSecretRef:
+  name: vcluster-platform-agent

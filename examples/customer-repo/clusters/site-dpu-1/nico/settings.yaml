@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: blueprint-settings
+  name: gitops-settings
   namespace: flux-system
   labels:
     reconcile.fluxcd.io/watch: Enabled

@@ -1,0 +1,21 @@
+image: alpine/k8s:1.29.4
+interval: 10
+vault:
+  namespace: vault
+  statefulSet: vault
+  service: vault-internal
+  replicas: 3
+  keysSecret: vault-unseal-keys
+pki:
+  mount: nico-pki
+  role: nico-cluster
+  commonName: nico-site-ca
+kvMount: nico-kv
+certManager:
+  authMount: kubernetes
+  role: cert-manager
+  serviceAccount: cert-manager-vault
+  namespace: cert-manager
+nico:
+  namespace: nico-system
+  tokenSecret: nico-vault-token

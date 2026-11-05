@@ -37,7 +37,7 @@ Each cluster has a `nico/settings.yaml`. Anything else goes in `nico/overrides/<
 
 ## Overrides you'll need
 
-- `nico.yaml` (site): the NICo site config. Start from the example.
+- `nico.yaml` (site): the NICo site config. Start from the example. `dhcp_servers` takes IP addresses, not names.
 - `nico-provider.yaml` (global): one entry per site.
 
 Helm replaces lists. If you add an issuer in `nico-rest.yaml`, keep the Platform issuer first.

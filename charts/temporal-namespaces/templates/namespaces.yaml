@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temporal-namespaces
+  namespace: {{ .Values.namespace }}
+data:
+  namespaces: {{ join "," .Values.namespaces | quote }}
+  retention: {{ .Values.retention | quote }}

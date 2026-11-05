@@ -1,4 +1,28 @@
 nico-api:
+  extraEnv:
+  - name: KUBECONFIG
+    value: /var/run/secrets/nico-kube/config
+  extraVolumes:
+  - name: kube-api
+    projected:
+      sources:
+      - serviceAccountToken:
+          path: token
+          expirationSeconds: 3600
+      - configMap:
+          name: kube-root-ca.crt
+          items:
+          - key: ca.crt
+            path: ca.crt
+      - configMap:
+          name: nico-api-kubeconfig
+          items:
+          - key: config
+            path: config
+  extraVolumeMounts:
+  - name: kube-api
+    mountPath: /var/run/secrets/nico-kube
+    readOnly: true
   dpf:
     rbacCreate: true
     operatorNamespace: dpf-operator-system
@@ -8,7 +32,7 @@ nico-api:
     nicoApiSiteConfig: |
       sitename = "site-dpu-1"
       initial_domain_name = "site-dpu-1.example.com"
-      dhcp_servers = ["nico-dhcp.nico-system.svc.cluster.local:67"]
+      dhcp_servers = []
       enable_route_servers = true
       attestation_enabled = false
 

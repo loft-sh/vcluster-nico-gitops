@@ -1,4 +1,4 @@
-# vCluster NICo Blueprints
+# vCluster NICo GitOps
 
 GitOps setup for NICo sites and the global control plane. Reference it from your own repo with Flux or Argo CD.
 
@@ -7,6 +7,7 @@ GitOps setup for NICo sites and the global control plane. Reference it from your
 | Layer | Installs | Needed by |
 |---|---|---|
 | `global` | vCluster Platform, NICo REST, Temporal | the global cluster |
+| `site-vault` | Vault, unsealed automatically. A stop-gap, see [docs/vault.md](docs/vault.md) | sites without their own Vault |
 | `site-base` | cert-manager, Vault issuer, Postgres | every site |
 | `site-dpu` | DPF, for BlueField DPUs | DPU sites only |
 | `site` | NICo Core, site agent | every site |
@@ -25,7 +26,9 @@ You don't copy the patterns. Your repo points Flux or Argo CD at them, pinned to
 - **Reference** this repo directly. Upgrade by changing the tag.
 - **Mirror** it into your own Git and point at the mirror. Same upgrades, nothing reaches outside your network.
 
-Either way, only the URL in `blueprint.yaml` or `argocd-root.yaml` changes.
+Either way, only the URL in `gitops.yaml` or `argocd-root.yaml` changes.
+
+NICo's charts and images come from `ghcr.io/loft-sh/vcluster-platform-nico`. To stay offline, mirror those too.
 
 ## Use it
 
@@ -40,12 +43,12 @@ Either way, only the URL in `blueprint.yaml` or `argocd-root.yaml` changes.
    NICO_VAULT_TOKEN=<token> scripts/bootstrap-site-secrets.sh --context <site> [--dpu]
    ```
 5. Point your tool at the patterns:
-   - Flux: add the `nico` folder to the cluster. Its `blueprint.yaml` references `patterns/flux/<layer>`.
+   - Flux: add the `nico` folder to the cluster. Its `gitops.yaml` references `patterns/flux/<layer>`.
    - Argo CD: apply `nico/argocd-root.yaml`. It references `patterns/argocd/<layer>`.
 6. Register each site: [docs/site-onboarding.md](docs/site-onboarding.md).
 
 All versions are in [versions.yaml](versions.yaml). Before you start: [docs/prerequisites.md](docs/prerequisites.md).
 
-## Changing the blueprint
+## Changing this repo
 
 Change a version in `versions.yaml`, or a component in `scripts/generate-patterns.py`, then run the generator and `scripts/validate.sh`. CI runs the same check plus a kind deploy of a site and a DPU site.

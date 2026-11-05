@@ -8,6 +8,7 @@ metadata:
   namespace: {{ $.Values.argocd.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: {{ $c.wave | quote }}
+    argocd.argoproj.io/compare-options: ServerSideDiff={{ $c.serverSideDiff }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -15,14 +16,14 @@ spec:
   destination:
     server: {{ $.Values.destination.server }}
     namespace: {{ $c.namespace }}
+  {{- with $c.ignoreDifferences }}
+  ignoreDifferences:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   sources:
-    {{- if $c.source.nico }}
-    - repoURL: {{ $.Values.nico.repoURL }}
-      targetRevision: {{ $.Values.nico.targetRevision }}
-      path: {{ $c.source.path }}
-    {{- else if $c.source.blueprint }}
-    - repoURL: {{ $.Values.blueprint.repoURL }}
-      targetRevision: {{ $.Values.blueprint.targetRevision }}
+    {{- if $c.source.gitops }}
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
       path: {{ $c.source.path }}
     {{- else }}
     - repoURL: {{ $c.source.repoURL }}
@@ -48,9 +49,9 @@ spec:
         valuesObject:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-    - repoURL: {{ $.Values.blueprint.repoURL }}
-      targetRevision: {{ $.Values.blueprint.targetRevision }}
-      ref: blueprint
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
+      ref: gitops
     - repoURL: {{ $.Values.environment.repoURL }}
       targetRevision: {{ $.Values.environment.targetRevision }}
       ref: env
@@ -62,6 +63,9 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      {{- if $c.ignoreDifferences }}
+      - RespectIgnoreDifferences=true
+      {{- end }}
     retry:
       limit: 20
       backoff:

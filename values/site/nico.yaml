@@ -10,6 +10,11 @@ global:
       group: cert-manager.io
 nico-api:
   automountServiceAccountToken: false
+  webAuth:
+    basic:
+      existingSecret:
+        name: nico-web-auth
+        key: password
   envFrom:
     vaultToken:
       secretName: nico-vault-token
@@ -25,8 +30,9 @@ nico-api:
     DB_NAME: nico
   migrationJob:
     enabled: true
-    sslMode: disable
   externalService:
+    enabled: false
+  legacyAlias:
     enabled: false
 nico-pxe:
   bootArtifactContainers:
@@ -44,3 +50,7 @@ nico-pxe:
     - sh
     - -c
     - set -e; cp -r /aarch64 /apt /forge-boot-artifacts/blobs/internal
+  legacyAlias:
+    enabled: false
+nico-dsx-exchange-consumer:
+  enabled: false

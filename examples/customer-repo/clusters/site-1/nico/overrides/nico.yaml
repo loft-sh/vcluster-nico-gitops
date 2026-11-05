@@ -5,7 +5,7 @@ nico-api:
     nicoApiSiteConfig: |
       sitename = "site-1"
       initial_domain_name = "site-1.example.com"
-      dhcp_servers = ["nico-dhcp.nico-system.svc.cluster.local:67"]
+      dhcp_servers = []
       enable_route_servers = true
       attestation_enabled = false
 

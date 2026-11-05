@@ -1,0 +1,4 @@
+insecureSkipVerify: true
+service:
+  annotations:
+    metallb.io/loadBalancerIPs: 172.18.255.200

@@ -29,7 +29,7 @@ spec:
       enabled: true
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-overrides-cert-manager
+    name: gitops-overrides-cert-manager
     valuesKey: values.yaml
     optional: true
 ---
@@ -49,7 +49,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
-        name: vcluster-nico-blueprints
+        name: vcluster-nico-gitops
   install:
     createNamespace: true
     timeout: 15m
@@ -63,30 +63,30 @@ spec:
   - name: cert-manager
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultAddr
     targetPath: vault.address
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultPkiMount
     targetPath: vault.pkiMount
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultPkiRole
     targetPath: vault.pkiRole
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultCertManagerAuthMount
     targetPath: vault.certManager.authMount
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultCertManagerRole
     targetPath: vault.certManager.role
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: storageClass
     targetPath: postgres.storageClass
   - kind: ConfigMap
-    name: blueprint-overrides-site-prereqs
+    name: gitops-overrides-site-prereqs
     valuesKey: values.yaml
     optional: true

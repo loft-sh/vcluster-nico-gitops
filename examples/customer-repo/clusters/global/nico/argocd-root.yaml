@@ -9,15 +9,15 @@ spec:
     server: https://kubernetes.default.svc
     namespace: argocd
   sources:
-  - repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+  - repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
     targetRevision: v0.1.0
     path: patterns/argocd/global
     helm:
       valueFiles:
       - $env/clusters/global/nico/settings.yaml
       valuesObject:
-        blueprint:
-          repoURL: https://github.com/loft-sh/vcluster-nico-blueprints.git
+        gitops:
+          repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
           targetRevision: v0.1.0
         environment:
           repoURL: https://github.com/example-org/nico-environments.git
@@ -30,3 +30,9 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

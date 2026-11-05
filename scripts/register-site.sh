@@ -34,6 +34,8 @@ done
 
 api() { curl -fsS -H "Authorization: Bearer $NICO_TOKEN" -H "Content-Type: application/json" "$@"; }
 
+api "$REST/v2/org/$ORG/nico/infrastructure-provider/current" >/dev/null
+
 SITE_ID=$(api "$REST/v2/org/$ORG/nico/site" | jq -r --arg n "$NAME" '[.[] | select(.name == $n)][0].id // empty')
 if [ -n "$SITE_ID" ]; then
   echo "site $NAME already exists: $SITE_ID"
@@ -53,7 +55,7 @@ done
 
 CACERT=$(kubectl --context "$GLOBAL" -n nico-rest get secret ca-signing-secret -o jsonpath='{.data.tls\.crt}' | base64 -d)
 
-kubectl --context "$SITE" create namespace nico-rest --dry-run=client -o yaml | kubectl --context "$SITE" apply -f - >/dev/null
+kubectl --context "$SITE" get namespace nico-rest >/dev/null 2>&1 || kubectl --context "$SITE" create namespace nico-rest >/dev/null
 kubectl --context "$SITE" -n nico-rest create secret generic site-registration \
   --from-literal=site-uuid="$SITE_ID" --from-literal=otp="$OTP" \
   --from-literal=creds-url="$CREDS" --from-literal=cacert="$CACERT" \

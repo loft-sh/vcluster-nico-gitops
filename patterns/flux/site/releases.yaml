@@ -1,6 +1,43 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
+  name: vcluster-platform-agent
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: vcluster-platform-agent
+  targetNamespace: vcluster-platform
+  storageNamespace: vcluster-platform
+  chart:
+    spec:
+      chart: vcluster-platform
+      version: 5.0.0-rc.1
+      sourceRef:
+        kind: HelmRepository
+        name: loft
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+    disableWait: true
+  valuesFrom:
+  - kind: ConfigMap
+    name: gitops-defaults-vcluster-platform-agent
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: gitops-overrides-vcluster-platform-agent
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
   name: nico
   namespace: flux-system
 spec:
@@ -10,11 +47,11 @@ spec:
   storageNamespace: nico-system
   chart:
     spec:
-      chart: ./helm
-      reconcileStrategy: Revision
+      chart: nico
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
   install:
     createNamespace: true
     timeout: 20m
@@ -28,22 +65,22 @@ spec:
   - name: site-prereqs
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-nico
+    name: gitops-defaults-nico
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultAddr
     targetPath: nico-api.vaultClusterInfo.VAULT_SERVICE
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultKvMount
     targetPath: nico-api.vaultClusterInfo.NICO_VAULT_MOUNT
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: vaultPkiMount
     targetPath: nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT
   - kind: ConfigMap
-    name: blueprint-overrides-nico
+    name: gitops-overrides-nico
     valuesKey: values.yaml
     optional: true
 ---
@@ -59,11 +96,11 @@ spec:
   storageNamespace: nico-rest
   chart:
     spec:
-      chart: ./helm/rest/nico-rest-site-agent
-      reconcileStrategy: Revision
+      chart: nico-rest-site-agent
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
   install:
     createNamespace: true
     timeout: 15m
@@ -79,21 +116,21 @@ spec:
   - name: nico
   valuesFrom:
   - kind: ConfigMap
-    name: blueprint-defaults-nico-site-agent
+    name: gitops-defaults-nico-site-agent
     valuesKey: values.yaml
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: siteId
     targetPath: envConfig.CLUSTER_ID
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: siteId
     targetPath: envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE
   - kind: ConfigMap
-    name: blueprint-settings
+    name: gitops-settings
     valuesKey: temporalHost
     targetPath: envConfig.TEMPORAL_HOST
   - kind: ConfigMap
-    name: blueprint-overrides-nico-site-agent
+    name: gitops-overrides-nico-site-agent
     valuesKey: values.yaml
     optional: true

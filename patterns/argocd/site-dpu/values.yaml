@@ -1,13 +1,10 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
   targetRevision: main
   path: clusters/site-1/nico
-nico:
-  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
-  targetRevision: source/v2.4.0-vcluster.rc5.1
 argocd:
   namespace: argocd
   project: default
@@ -23,30 +20,33 @@ components:
   releaseName: argo-cd
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argo-cd
     targetRevision: 9.4.1
   valueFiles:
-  - $blueprint/values/site-dpu/argo-cd.yaml
+  - $gitops/values/site-dpu/argo-cd.yaml
   - $env/{path}/overrides/argo-cd.yaml
 - name: kamaji
   releaseName: kamaji
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/nvidia/charts
     chart: kamaji
     targetRevision: 1.2.0
   valueFiles:
-  - $blueprint/values/site-dpu/kamaji.yaml
+  - $gitops/values/site-dpu/kamaji.yaml
   - $env/{path}/overrides/kamaji.yaml
 - name: kamaji-datastore
   releaseName: kamaji-datastore
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/kamaji-datastore
   valueFiles:
   - $env/{path}/overrides/kamaji-datastore.yaml
@@ -54,41 +54,45 @@ components:
   releaseName: maintenance-operator
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/mellanox
     chart: maintenance-operator-chart
     targetRevision: 0.3.0
   valueFiles:
-  - $blueprint/values/site-dpu/maintenance-operator.yaml
+  - $gitops/values/site-dpu/maintenance-operator.yaml
   - $env/{path}/overrides/maintenance-operator.yaml
 - name: node-feature-discovery
   releaseName: node-feature-discovery
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     chart: node-feature-discovery
     targetRevision: 0.18.3
   valueFiles:
-  - $blueprint/values/site-dpu/node-feature-discovery.yaml
+  - $gitops/values/site-dpu/node-feature-discovery.yaml
   - $env/{path}/overrides/node-feature-discovery.yaml
 - name: dpf-operator
   releaseName: dpf-operator
   namespace: dpf-operator-system
   wave: 1
+  serverSideDiff: true
   source:
     repoURL: https://helm.ngc.nvidia.com/nvidia/doca
     chart: dpf-operator
     targetRevision: v26.4.0
   valueFiles:
-  - $blueprint/values/site-dpu/dpf-operator.yaml
+  - $gitops/values/site-dpu/dpf-operator.yaml
   - $env/{path}/overrides/dpf-operator.yaml
 - name: dpf-config
   releaseName: dpf-config
   namespace: dpf-operator-system
   wave: 2
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/dpf-config
   valueFiles:
   - $env/{path}/overrides/dpf-config.yaml

@@ -5,7 +5,7 @@ usage() {
   cat >&2 <<'EOF'
 usage: scripts/bootstrap-global-secrets.sh --context <kube-context> [--ca-cert <pem> --ca-key <pem>]
 
-Creates the namespaces and Secrets the global control plane blueprint expects.
+Creates the namespaces and Secrets the global control plane expects.
 Existing Secrets are left unchanged, so the script is safe to re-run.
 
   --ca-cert, --ca-key   bring your own REST CA; otherwise a self-signed RSA 4096 CA is generated
@@ -32,7 +32,7 @@ rand() { openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c "${1:-32}"; }
 exists() { k -n "$1" get secret "$2" >/dev/null 2>&1; }
 
 for ns in nico-rest temporal cert-manager vcluster-platform; do
-  k create namespace "$ns" --dry-run=client -o yaml | k apply -f - >/dev/null
+  k get namespace "$ns" >/dev/null 2>&1 || k create namespace "$ns" >/dev/null
 done
 
 if exists nico-rest postgres-credentials; then
@@ -65,6 +65,11 @@ fi
 
 if exists nico-rest ca-signing-secret; then
   echo "nico-rest/ca-signing-secret exists, keeping it"
+  if ! exists cert-manager ca-signing-secret; then
+    k -n nico-rest get secret ca-signing-secret -o json \
+      | jq '{apiVersion, kind, type, data, metadata: {name: .metadata.name, namespace: "cert-manager"}}' | k apply -f - >/dev/null
+    echo "restored cert-manager/ca-signing-secret from nico-rest"
+  fi
 else
   WORK=$(mktemp -d)
   trap 'rm -rf "$WORK"' EXIT
@@ -77,8 +82,8 @@ else
       -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" 2>/dev/null
   fi
   for ns in nico-rest cert-manager; do
-    k -n "$ns" create secret tls ca-signing-secret --cert="$WORK/ca.crt" --key="$WORK/ca.key" >/dev/null
-    echo "created $ns/ca-signing-secret"
+    k -n "$ns" create secret tls ca-signing-secret --cert="$WORK/ca.crt" --key="$WORK/ca.key" --dry-run=client -o yaml | k apply -f - >/dev/null
+    echo "stored $ns/ca-signing-secret"
   done
 fi
 

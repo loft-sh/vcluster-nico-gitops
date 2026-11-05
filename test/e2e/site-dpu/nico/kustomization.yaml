@@ -3,15 +3,15 @@ kind: Kustomization
 namespace: flux-system
 resources:
 - settings.yaml
-- blueprint.yaml
+- gitops.yaml
 generatorOptions:
   disableNameSuffixHash: true
   labels:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
-- name: blueprint-overrides-nico
+- name: gitops-overrides-nico
   files:
   - values.yaml=overrides/nico.yaml
-- name: blueprint-overrides-kamaji
+- name: gitops-overrides-kamaji
   files:
   - values.yaml=overrides/kamaji.yaml

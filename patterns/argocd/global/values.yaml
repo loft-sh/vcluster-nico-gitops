@@ -1,13 +1,10 @@
-blueprint:
-  repoURL: https://github.com/example-org/vcluster-nico-blueprints.git
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
   targetRevision: v0.1.0
 environment:
   repoURL: https://github.com/example-org/nico-environments.git
   targetRevision: main
   path: clusters/global/nico
-nico:
-  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
-  targetRevision: source/v2.4.0-vcluster.rc5.1
 argocd:
   namespace: argocd
   project: default
@@ -15,12 +12,14 @@ destination:
   server: https://kubernetes.default.svc
 namePrefix: ''
 data: {}
-ociRepositories: []
+ociRepositories:
+- ghcr.io/loft-sh/vcluster-platform-nico/charts
 components:
 - name: cert-manager
   releaseName: cert-manager
   namespace: cert-manager
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://charts.jetstack.io
     chart: cert-manager
@@ -34,8 +33,9 @@ components:
   releaseName: global-prereqs
   namespace: nico-rest
   wave: 1
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/global-prereqs
   valueFiles:
   - $env/{path}/overrides/global-prereqs.yaml
@@ -46,20 +46,23 @@ components:
   releaseName: temporal
   namespace: temporal
   wave: 2
+  serverSideDiff: true
   source:
-    nico: true
-    path: rest-api/temporal-helm/temporal
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: temporal
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
   - values.yaml
   - values-kind.yaml
-  - $blueprint/values/global/temporal.yaml
+  - $gitops/values/global/temporal.yaml
   - $env/{path}/overrides/temporal.yaml
 - name: temporal-namespaces
   releaseName: temporal-namespaces
   namespace: temporal
   wave: 3
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/temporal-namespaces
   valueFiles:
   - $env/{path}/overrides/temporal-namespaces.yaml
@@ -67,11 +70,13 @@ components:
   releaseName: nico-rest
   namespace: nico-rest
   wave: 4
+  serverSideDiff: true
   source:
-    nico: true
-    path: helm/rest/nico-rest
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: nico-rest
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
-  - $blueprint/values/global/nico-rest.yaml
+  - $gitops/values/global/nico-rest.yaml
   - $env/{path}/overrides/nico-rest.yaml
   settings:
   - key: platformOidcIssuer
@@ -82,12 +87,22 @@ components:
   releaseName: vcluster-platform
   namespace: vcluster-platform
   wave: 1
+  serverSideDiff: false
+  ignoreDifferences:
+  - kind: Service
+    jqPathExpressions:
+    - .spec.ports[].nodePort
+    - .metadata.annotations["metallb.io/ip-allocated-from-pool"]
+  - kind: PersistentVolumeClaim
+    jsonPointers:
+    - /spec/storageClassName
+    - /spec/volumeName
   source:
     repoURL: https://charts.loft.sh
     chart: vcluster-platform
     targetRevision: 5.0.0-rc.1
   valueFiles:
-  - $blueprint/values/global/vcluster-platform.yaml
+  - $gitops/values/global/vcluster-platform.yaml
   - $env/{path}/overrides/vcluster-platform.yaml
   settings:
   - key: platformHost
@@ -96,8 +111,9 @@ components:
   releaseName: nico-provider
   namespace: vcluster-platform
   wave: 5
+  serverSideDiff: true
   source:
-    blueprint: true
+    gitops: true
     path: charts/nico-provider
   valueFiles:
   - $env/{path}/overrides/nico-provider.yaml
