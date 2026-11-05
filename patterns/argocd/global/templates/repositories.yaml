@@ -1,0 +1,15 @@
+{{- range .Values.ociRepositories }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oci-{{ . | replace "/" "-" | replace "." "-" }}
+  namespace: {{ $.Values.argocd.namespace }}
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  type: helm
+  name: {{ . }}
+  url: {{ . }}
+  enableOCI: "true"
+{{- end }}

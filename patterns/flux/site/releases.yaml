@@ -10,11 +10,11 @@ spec:
   storageNamespace: nico-system
   chart:
     spec:
-      chart: ./helm
-      reconcileStrategy: Revision
+      chart: nico
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
   install:
     createNamespace: true
     timeout: 20m
@@ -59,11 +59,11 @@ spec:
   storageNamespace: nico-rest
   chart:
     spec:
-      chart: ./helm/rest/nico-rest-site-agent
-      reconcileStrategy: Revision
+      chart: nico-rest-site-agent
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
   install:
     createNamespace: true
     timeout: 15m

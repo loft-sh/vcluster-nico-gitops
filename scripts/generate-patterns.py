@@ -6,7 +6,6 @@ import yaml
 R = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 V = yaml.safe_load(open(f"{R}/versions.yaml"))
 
-NICO_SOURCE = {"kind": "GitRepository", "name": "nico-charts"}
 GITOPS = {"kind": "GitRepository", "name": "vcluster-nico-gitops"}
 
 def helm_repo(name, url, oci=False):
@@ -25,15 +24,10 @@ REPOS = {
     "doca": "https://helm.ngc.nvidia.com/nvidia/doca",
     "nvidia-charts": "oci://ghcr.io/nvidia/charts",
     "mellanox": "oci://ghcr.io/mellanox",
+    "nico": "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts",
 }
 
-NICO_GIT = {
-    "apiVersion": "source.toolkit.fluxcd.io/v1", "kind": "GitRepository",
-    "metadata": {"name": "nico-charts", "namespace": "flux-system"},
-    "spec": {"interval": "1h", "url": "https://github.com/loft-sh/vcluster-platform-nico",
-             "ref": {"tag": V["nico"]["charts"]},
-             "ignore": "/*\n!/helm/\n!/rest-api/temporal-helm/\n"},
-}
+NICO = V["nico"]["version"].lstrip("v")
 
 CERT_MANAGER = dict(name="cert-manager", repo=("jetstack", "cert-manager", V["cert-manager"]), ns="cert-manager",
                     values={"crds": {"enabled": True}})
@@ -43,10 +37,10 @@ COMPONENTS = {
         CERT_MANAGER,
         dict(name="global-prereqs", gitops="./charts/global-prereqs", ns="nico-rest", deps=["cert-manager"],
              settings=[("storageClass", "postgres.storageClass")]),
-        dict(name="temporal", git="./rest-api/temporal-helm/temporal", ns="temporal", deps=["global-prereqs"], defaults=True,
-             valuesFiles=["./rest-api/temporal-helm/temporal/values.yaml", "./rest-api/temporal-helm/temporal/values-kind.yaml"]),
+        dict(name="temporal", repo=("nico", "temporal", NICO), ns="temporal", deps=["global-prereqs"], defaults=True,
+             valuesFiles=["values.yaml", "values-kind.yaml"]),
         dict(name="temporal-namespaces", gitops="./charts/temporal-namespaces", ns="temporal", deps=["temporal"]),
-        dict(name="nico-rest", git="./helm/rest/nico-rest", ns="nico-rest", deps=["temporal-namespaces"], defaults=True,
+        dict(name="nico-rest", repo=("nico", "nico-rest", NICO), ns="nico-rest", deps=["temporal-namespaces"], defaults=True,
              settings=[("platformOidcIssuer", "nico-rest-api.config.issuers[0].issuer"),
                        ("siteManagerHost", "nico-rest-site-manager.certificate.dnsNames[5]")]),
         dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
@@ -79,20 +73,19 @@ COMPONENTS = {
                        ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
     ],
     "site": [
-        dict(name="nico", git="./helm", ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
+        dict(name="nico", repo=("nico", "nico", NICO), ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
              settings=[("vaultAddr", "nico-api.vaultClusterInfo.VAULT_SERVICE"),
                        ("vaultKvMount", "nico-api.vaultClusterInfo.NICO_VAULT_MOUNT"),
                        ("vaultPkiMount", "nico-api.vaultClusterInfo.NICO_VAULT_PKI_MOUNT")]),
-        dict(name="nico-site-agent", release="nico-rest-site-agent", git="./helm/rest/nico-rest-site-agent", ns="nico-rest",
+        dict(name="nico-site-agent", release="nico-rest-site-agent", repo=("nico", "nico-rest-site-agent", NICO), ns="nico-rest",
              deps=["nico"], defaults=True, disableWait=True,
              settings=[("siteId", "envConfig.CLUSTER_ID"), ("siteId", "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE"),
                        ("temporalHost", "envConfig.TEMPORAL_HOST")]),
     ],
 }
 
-SCOPE_SOURCES = {"global": ["jetstack", "loft"], "site-base": ["jetstack"],
-                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": []}
-SCOPE_NICO_GIT = {"global": True, "site-base": False, "site-dpu": False, "site": True}
+SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-base": ["jetstack"],
+                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["nico"]}
 SCOPE_TITLE = {"global": "global control plane", "site-base": "NICo site base layer",
                "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
 
@@ -102,8 +95,6 @@ def release(c):
         repo, chart, version = c["repo"]
         chart_spec = {"chart": chart, "version": version,
                       "sourceRef": {"kind": "HelmRepository", "name": repo}}
-    elif "git" in c:
-        chart_spec = {"chart": c["git"], "reconcileStrategy": "Revision", "sourceRef": dict(NICO_SOURCE)}
         if c.get("valuesFiles"):
             chart_spec["valuesFiles"] = c["valuesFiles"]
     else:
@@ -141,8 +132,6 @@ for scope in COMPONENTS:
     d = f"{R}/patterns/flux/{scope}"
     os.makedirs(d, exist_ok=True)
     sources = [helm_repo(n, REPOS[n], REPOS[n].startswith("oci://")) for n in SCOPE_SOURCES[scope]]
-    if SCOPE_NICO_GIT[scope]:
-        sources.append(NICO_GIT)
     with open(f"{d}/sources.yaml", "w") as f:
         yaml.safe_dump_all(sources, f, sort_keys=False)
     with open(f"{d}/releases.yaml", "w") as f:
@@ -164,9 +153,7 @@ def argo_component(c, wave):
     if "repo" in c:
         repo, chart, version = c["repo"]
         out["source"] = {"repoURL": REPO_URLS[repo], "chart": chart, "targetRevision": version}
-    elif "git" in c:
-        out["source"] = {"nico": True, "path": c["git"].lstrip("./")}
-        value_files += [f.split("/")[-1] for f in c.get("valuesFiles", [])]
+        value_files += c.get("valuesFiles", [])
     else:
         out["source"] = {"gitops": True, "path": c["gitops"].lstrip("./")}
     if c.get("defaults"):
@@ -200,7 +187,6 @@ for scope in COMPONENTS:
         "gitops": {"repoURL": "https://github.com/example-org/vcluster-nico-gitops.git", "targetRevision": "v0.1.0"},
         "environment": {"repoURL": "https://github.com/example-org/nico-environments.git", "targetRevision": "main",
                         "path": f"clusters/{'global' if scope == 'global' else 'site-1'}/nico"},
-        "nico": {"repoURL": NICO_GIT["spec"]["url"] + ".git", "targetRevision": NICO_GIT["spec"]["ref"]["tag"]},
         "argocd": {"namespace": "argocd", "project": "default"},
         "destination": {"server": "https://kubernetes.default.svc"},
         "namePrefix": "",
@@ -243,7 +229,7 @@ def pin(path, pins):
         yaml.safe_dump(doc, f, sort_keys=False)
 
 
-IMAGES = V["nico"]["images"]
+IMAGES = V["nico"]["version"]
 pin("values/global/nico-rest.yaml", [(["global", "image", "tag"], IMAGES)])
 pin("values/site/nico-site-agent.yaml", [(["global", "image", "tag"], IMAGES)])
 site = yaml.safe_load(open(f"{R}/values/site/nico.yaml"))

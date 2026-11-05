@@ -5,9 +5,6 @@ environment:
   repoURL: https://github.com/example-org/nico-environments.git
   targetRevision: main
   path: clusters/site-1/nico
-nico:
-  repoURL: https://github.com/loft-sh/vcluster-platform-nico.git
-  targetRevision: source/v2.4.0-vcluster.rc5.1
 argocd:
   namespace: argocd
   project: default
@@ -15,15 +12,17 @@ destination:
   server: https://kubernetes.default.svc
 namePrefix: ''
 data: {}
-ociRepositories: []
+ociRepositories:
+- ghcr.io/loft-sh/vcluster-platform-nico/charts
 components:
 - name: nico
   releaseName: nico
   namespace: nico-system
   wave: 0
   source:
-    nico: true
-    path: helm
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: nico
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
   - $gitops/values/site/nico.yaml
   - $env/{path}/overrides/nico.yaml
@@ -39,8 +38,9 @@ components:
   namespace: nico-rest
   wave: 1
   source:
-    nico: true
-    path: helm/rest/nico-rest-site-agent
+    repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
+    chart: nico-rest-site-agent
+    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
   valueFiles:
   - $gitops/values/site/nico-site-agent.yaml
   - $env/{path}/overrides/nico-site-agent.yaml

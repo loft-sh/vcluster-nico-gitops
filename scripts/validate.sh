@@ -7,14 +7,9 @@ ver() { python3 -c 'import sys, yaml
 d = yaml.safe_load(open(sys.argv[1]))
 for k in sys.argv[2:]: d = d[k]
 print(d)' "$ROOT/versions.yaml" "$@"; }
-NICO_TAG=$(ver nico charts)
+NICO_VERSION=$(ver nico version)
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-
-if [ -z "${NICO_SOURCE:-}" ]; then
-  NICO_SOURCE=$WORK/nico
-  git clone --quiet --depth 1 --branch "$NICO_TAG" https://github.com/loft-sh/vcluster-platform-nico "$NICO_SOURCE"
-fi
 
 export HELM_CACHE_HOME=$WORK/helm-cache HELM_CONFIG_HOME=$WORK/helm-config HELM_REPOSITORY_CONFIG=$WORK/helm-repos.yaml
 helm repo add jetstack https://charts.jetstack.io >/dev/null
@@ -23,6 +18,13 @@ helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo add nfd https://kubernetes-sigs.github.io/node-feature-discovery/charts >/dev/null
 helm repo add doca https://helm.ngc.nvidia.com/nvidia/doca >/dev/null
 helm repo update >/dev/null
+
+if [ -z "${NICO_CHARTS:-}" ]; then
+  NICO_CHARTS=$WORK/nico-charts
+  for c in nico nico-rest nico-rest-site-agent temporal; do
+    helm pull "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts/$c" --version "${NICO_VERSION#v}" --untar -d "$NICO_CHARTS" >/dev/null
+  done
+fi
 
 fail=0
 check() {
@@ -51,19 +53,19 @@ S=$EXAMPLE/site-1/nico/overrides
 SITE_ID=11111111-2222-3333-4444-555555555555
 check "cert-manager" helm template cert-manager jetstack/cert-manager --version "$(ver cert-manager)" -n cert-manager --set crds.enabled=true
 check "global-prereqs" helm template global-prereqs "$ROOT/charts/global-prereqs" -n nico-rest -f "$G/global-prereqs.yaml"
-check "temporal" helm template temporal "$NICO_SOURCE/rest-api/temporal-helm/temporal" -n temporal \
-  -f "$NICO_SOURCE/rest-api/temporal-helm/temporal/values.yaml" -f "$NICO_SOURCE/rest-api/temporal-helm/temporal/values-kind.yaml" \
+check "temporal" helm template temporal "$NICO_CHARTS/temporal" -n temporal \
+  -f "$NICO_CHARTS/temporal/values.yaml" -f "$NICO_CHARTS/temporal/values-kind.yaml" \
   -f "$ROOT/values/global/temporal.yaml" -f "$G/temporal.yaml"
 check "temporal-namespaces" helm template temporal-namespaces "$ROOT/charts/temporal-namespaces" -n temporal
-check "nico-rest" helm template nico-rest "$NICO_SOURCE/helm/rest/nico-rest" -n nico-rest -f "$ROOT/values/global/nico-rest.yaml" \
+check "nico-rest" helm template nico-rest "$NICO_CHARTS/nico-rest" -n nico-rest -f "$ROOT/values/global/nico-rest.yaml" \
   --set "nico-rest-api.config.issuers[0].issuer=$(settings global platformOidcIssuer)" \
   --set "nico-rest-site-manager.certificate.dnsNames[5]=$(settings global siteManagerHost)"
 check "vcluster-platform" helm template vcluster-platform loft/vcluster-platform --version "$(ver vcluster-platform)" -n vcluster-platform \
   -f "$ROOT/values/global/vcluster-platform.yaml" --set "config.loftHost=$(settings global platformHost)"
 check "nico-provider" helm template nico-provider "$ROOT/charts/nico-provider" -f "$G/nico-provider.yaml" --set "sites[0].siteId=$SITE_ID"
 check "site-prereqs" helm template site-prereqs "$ROOT/charts/site-prereqs" -n nico-system --set "vault.address=$(settings site-1 vaultAddr)"
-check "nico" helm template nico "$NICO_SOURCE/helm" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$S/nico.yaml"
-check "nico-site-agent" helm template nico-rest-site-agent "$NICO_SOURCE/helm/rest/nico-rest-site-agent" -n nico-rest \
+check "nico" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$S/nico.yaml"
+check "nico-site-agent" helm template nico-rest-site-agent "$NICO_CHARTS/nico-rest-site-agent" -n nico-rest \
   -f "$ROOT/values/site/nico-site-agent.yaml" --set "envConfig.CLUSTER_ID=$SITE_ID" --set "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE=$SITE_ID"
 
 D=$EXAMPLE/site-dpu-1/nico/overrides
@@ -80,7 +82,7 @@ check "dpf-operator" helm template dpf-operator doca/dpf-operator --version "$(v
 check "dpf-config" helm template dpf-config "$ROOT/charts/dpf-config" -n dpf-operator-system \
   --set "apiServer.vip=$(settings site-dpu-1 dpfApiServerVip)" --set "dpuCluster.keepalived.interface=$(settings site-dpu-1 dpuClusterInterface)" \
   --set "dpuCluster.keepalived.vip=$(settings site-dpu-1 dpuClusterVip)"
-check "nico with dpf" helm template nico "$NICO_SOURCE/helm" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$D/nico.yaml"
+check "nico with dpf" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$D/nico.yaml"
 
 for f in "$ROOT"/scripts/*.sh "$ROOT"/test/e2e/*.sh; do bash -n "$f" || { echo "FAIL  syntax $f"; fail=1; }; done
 exit $fail

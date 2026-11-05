@@ -17,11 +17,7 @@ spec:
     server: {{ $.Values.destination.server }}
     namespace: {{ $c.namespace }}
   sources:
-    {{- if $c.source.nico }}
-    - repoURL: {{ $.Values.nico.repoURL }}
-      targetRevision: {{ $.Values.nico.targetRevision }}
-      path: {{ $c.source.path }}
-    {{- else if $c.source.gitops }}
+    {{- if $c.source.gitops }}
     - repoURL: {{ $.Values.gitops.repoURL }}
       targetRevision: {{ $.Values.gitops.targetRevision }}
       path: {{ $c.source.path }}

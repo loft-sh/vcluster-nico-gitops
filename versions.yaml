@@ -1,6 +1,5 @@
 nico:
-  charts: source/v2.4.0-vcluster.rc5.1
-  images: v2.4.0-vcluster.rc5.1.g3d8bdad7
+  version: v2.4.0-vcluster.rc5.1.g3d8bdad7
 vcluster-platform: 5.0.0-rc.1
 cert-manager: v1.20.2
 postgres: 14.5-alpine

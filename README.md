@@ -27,6 +27,8 @@ You don't copy the patterns. Your repo points Flux or Argo CD at them, pinned to
 
 Either way, only the URL in `gitops.yaml` or `argocd-root.yaml` changes.
 
+NICo's charts and images come from `ghcr.io/loft-sh/vcluster-platform-nico`. To stay offline, mirror those too.
+
 ## Use it
 
 1. Pick the layers for each cluster from the table above.

@@ -83,14 +83,14 @@ spec:
   storageNamespace: temporal
   chart:
     spec:
-      chart: ./rest-api/temporal-helm/temporal
-      reconcileStrategy: Revision
+      chart: temporal
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
       valuesFiles:
-      - ./rest-api/temporal-helm/temporal/values.yaml
-      - ./rest-api/temporal-helm/temporal/values-kind.yaml
+      - values.yaml
+      - values-kind.yaml
   install:
     createNamespace: true
     timeout: 15m
@@ -157,11 +157,11 @@ spec:
   storageNamespace: nico-rest
   chart:
     spec:
-      chart: ./helm/rest/nico-rest
-      reconcileStrategy: Revision
+      chart: nico-rest
+      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
       sourceRef:
-        kind: GitRepository
-        name: nico-charts
+        kind: HelmRepository
+        name: nico
   install:
     createNamespace: true
     timeout: 15m
