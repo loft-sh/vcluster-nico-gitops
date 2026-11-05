@@ -6,7 +6,7 @@ fail=0
 ok() { printf 'OK    %s\n' "$1"; }
 bad() { printf 'FAIL  %s: %s\n' "$1" "$2"; fail=1; }
 check() { local name=$1; shift; if out=$("$@" 2>&1); then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
-has() { local name=$1 want=$2; shift 2; out=$("$@" 2>&1); if echo "$out" | grep -q -- "$want"; then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
+has() { local name=$1 want=$2; shift 2; out=$("$@" 2>&1); if grep -q -- "$want" <<<"$out"; then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
 
 MODE=${MODE:-flux}
 for app in cert-manager site-prereqs nico; do
