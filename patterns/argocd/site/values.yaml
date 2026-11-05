@@ -19,6 +19,7 @@ components:
   releaseName: vcluster-platform-agent
   namespace: vcluster-platform
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://charts.loft.sh
     chart: vcluster-platform
@@ -30,6 +31,7 @@ components:
   releaseName: nico
   namespace: nico-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico
@@ -48,6 +50,7 @@ components:
   releaseName: nico-rest-site-agent
   namespace: nico-rest
   wave: 1
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico-rest-site-agent

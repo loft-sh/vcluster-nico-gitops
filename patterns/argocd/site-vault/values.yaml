@@ -18,6 +18,7 @@ components:
   releaseName: vault
   namespace: vault
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://helm.releases.hashicorp.com
     chart: vault
@@ -32,6 +33,7 @@ components:
   releaseName: vault-unseal
   namespace: vault
   wave: 1
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/vault-unseal

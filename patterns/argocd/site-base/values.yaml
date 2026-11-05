@@ -18,6 +18,7 @@ components:
   releaseName: cert-manager
   namespace: cert-manager
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://charts.jetstack.io
     chart: cert-manager
@@ -31,6 +32,7 @@ components:
   releaseName: site-prereqs
   namespace: nico-system
   wave: 1
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/site-prereqs

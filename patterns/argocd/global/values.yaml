@@ -19,6 +19,7 @@ components:
   releaseName: cert-manager
   namespace: cert-manager
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://charts.jetstack.io
     chart: cert-manager
@@ -32,6 +33,7 @@ components:
   releaseName: global-prereqs
   namespace: nico-rest
   wave: 1
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/global-prereqs
@@ -44,6 +46,7 @@ components:
   releaseName: temporal
   namespace: temporal
   wave: 2
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: temporal
@@ -57,6 +60,7 @@ components:
   releaseName: temporal-namespaces
   namespace: temporal
   wave: 3
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/temporal-namespaces
@@ -66,6 +70,7 @@ components:
   releaseName: nico-rest
   namespace: nico-rest
   wave: 4
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico-rest
@@ -82,6 +87,7 @@ components:
   releaseName: vcluster-platform
   namespace: vcluster-platform
   wave: 1
+  serverSideDiff: false
   source:
     repoURL: https://charts.loft.sh
     chart: vcluster-platform
@@ -96,6 +102,7 @@ components:
   releaseName: nico-provider
   namespace: vcluster-platform
   wave: 5
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/nico-provider

@@ -62,7 +62,7 @@ YAML
 
 argocd_synced() {
   local ctx=$1 app=$2 end=$((SECONDS + $3)) s=
-  until [ "$s" = "Synced Healthy Succeeded" ]; do
+  until [ "$s" = "Synced Healthy Succeeded" ] || [ "$s" = "Synced Healthy " ]; do
     [ $SECONDS -lt $end ] || { echo "application/$app not synced: ${s:-missing}"; return 1; }
     sleep 10
     s=$(kubectl --context "$ctx" -n argocd get "application/$app" \

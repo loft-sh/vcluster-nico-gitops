@@ -20,6 +20,7 @@ components:
   releaseName: argo-cd
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argo-cd
@@ -31,6 +32,7 @@ components:
   releaseName: kamaji
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/nvidia/charts
     chart: kamaji
@@ -42,6 +44,7 @@ components:
   releaseName: kamaji-datastore
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/kamaji-datastore
@@ -51,6 +54,7 @@ components:
   releaseName: maintenance-operator
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: ghcr.io/mellanox
     chart: maintenance-operator-chart
@@ -62,6 +66,7 @@ components:
   releaseName: node-feature-discovery
   namespace: dpf-operator-system
   wave: 0
+  serverSideDiff: true
   source:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     chart: node-feature-discovery
@@ -73,6 +78,7 @@ components:
   releaseName: dpf-operator
   namespace: dpf-operator-system
   wave: 1
+  serverSideDiff: true
   source:
     repoURL: https://helm.ngc.nvidia.com/nvidia/doca
     chart: dpf-operator
@@ -84,6 +90,7 @@ components:
   releaseName: dpf-config
   namespace: dpf-operator-system
   wave: 2
+  serverSideDiff: true
   source:
     gitops: true
     path: charts/dpf-config
