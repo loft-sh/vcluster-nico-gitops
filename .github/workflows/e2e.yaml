@@ -74,10 +74,41 @@ jobs:
         run: |
           for c in kind-nico-global kind-nico-site; do echo "=== $c"; kubectl config use-context $c; test/e2e/diagnostics.sh; done
 
-  argocd:
-    name: site with Argo CD
+  full-argocd:
+    name: global and site with Argo CD
     runs-on: large-16_64
-    timeout-minutes: 120
+    timeout-minutes: 150
+    env:
+      GITOPS_URL: https://github.com/${{ github.repository }}
+      GITOPS_BRANCH: ${{ github.head_ref || github.ref_name }}
+      GITOPS_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      GIT_TOKEN: ${{ github.token }}
+      MODE: argocd
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+      - uses: helm/kind-action@v1.15.2
+        with:
+          version: v0.33.0
+          install_only: true
+      - name: Deploy global and site, register the site, check it connects
+        run: test/e2e/run-full.sh
+      - name: Diagnostics
+        if: failure()
+        run: |
+          for c in kind-nico-global kind-nico-site; do echo "=== $c"; kubectl config use-context $c; test/e2e/diagnostics.sh; done
+
+  argocd:
+    name: ${{ matrix.env }} with Argo CD
+    runs-on: large-16_64
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [site, site-dpu]
     env:
       GITOPS_URL: https://github.com/${{ github.repository }}
       GITOPS_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -93,8 +124,8 @@ jobs:
           version: v0.33.0
           cluster_name: nico-e2e
           config: test/e2e/kind.yaml
-      - name: Deploy the site with Argo CD and check it
-        run: test/e2e/run-argocd.sh
+      - name: Deploy with Argo CD and check it
+        run: test/e2e/run-argocd.sh ${{ matrix.env }}
       - name: Diagnostics
         if: failure()
         run: |

@@ -9,13 +9,14 @@ check() { local name=$1; shift; if out=$("$@" 2>&1); then ok "$name"; else bad "
 has() { local name=$1 want=$2; shift 2; out=$("$@" 2>&1); if grep -q -- "$want" <<<"$out"; then ok "$name"; else bad "$name" "$(echo "$out" | tail -2)"; fi; }
 
 MODE=${MODE:-flux}
-for app in cert-manager site-prereqs nico; do
+released() {
   if [ "$MODE" = argocd ]; then
-    has "Application $app Synced and Healthy" "^Synced Healthy$" kubectl -n argocd get "application/$app" -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}'
+    has "Application $1 Synced and Healthy" "^Synced Healthy$" kubectl -n argocd get "application/$1" -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}'
   else
-    check "HelmRelease $app Ready" kubectl -n flux-system wait "helmrelease/$app" --for=condition=Ready --timeout=60s
+    check "HelmRelease $1 Ready" kubectl -n flux-system wait "helmrelease/$1" --for=condition=Ready --timeout=60s
   fi
-done
+}
+for app in cert-manager site-prereqs nico; do released "$app"; done
 check "ClusterIssuer vault-nico-issuer Ready (cert-manager logs in to Vault)" \
   kubectl wait clusterissuer/vault-nico-issuer --for=condition=Ready --timeout=120s
 check "every Certificate in nico-system Ready" kubectl -n nico-system wait certificate --all --for=condition=Ready --timeout=300s
@@ -40,9 +41,7 @@ if [ "$ENV" = site-vault ]; then
 fi
 
 if [ "$ENV" = site-dpu ]; then
-  for hr in argo-cd kamaji kamaji-datastore maintenance-operator node-feature-discovery dpf-operator dpf-config; do
-    check "HelmRelease $hr Ready" kubectl -n flux-system wait "helmrelease/$hr" --for=condition=Ready --timeout=60s
-  done
+  for app in argo-cd kamaji kamaji-datastore maintenance-operator node-feature-discovery dpf-operator dpf-config; do released "$app"; done
   check "Kamaji controller available" kubectl -n dpf-operator-system wait deploy/kamaji --for=condition=Available --timeout=300s
   has "Kamaji DataStore webhook back to Fail" "Fail" kubectl get validatingwebhookconfiguration kamaji-validating-webhook-configuration \
     -o jsonpath='{.webhooks[?(@.name=="vdatastore.kb.io")].failurePolicy}'

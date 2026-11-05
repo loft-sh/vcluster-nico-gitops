@@ -8,8 +8,16 @@ ok() { printf 'OK    %s\n' "$1"; }
 bad() { printf 'FAIL  %s: %s\n' "$1" "$2"; fail=1; }
 token() { "$ROOT/scripts/platform-token.sh" --context "$GLOBAL" --platform-host "$PLATFORM_IP" --org "$ORG"; }
 
-for hr in cert-manager global-prereqs temporal temporal-namespaces nico-rest vcluster-platform nico-provider; do
-  if kubectl --context "$GLOBAL" -n flux-system wait "helmrelease/$hr" --for=condition=Ready --timeout=60s >/dev/null 2>&1; then ok "global HelmRelease $hr Ready"; else bad "global HelmRelease $hr" "not Ready"; fi
+MODE=${MODE:-flux}
+for c in cert-manager global-prereqs temporal temporal-namespaces nico-rest vcluster-platform nico-provider; do
+  if [ "$MODE" = argocd ]; then
+    s=$(kubectl --context "$GLOBAL" -n argocd get "application/$c" -o jsonpath='{.status.sync.status} {.status.health.status}' 2>&1)
+    if [ "$s" = "Synced Healthy" ]; then ok "global Application $c Synced and Healthy"; else bad "global Application $c" "$s"; fi
+  elif kubectl --context "$GLOBAL" -n flux-system wait "helmrelease/$c" --for=condition=Ready --timeout=60s >/dev/null 2>&1; then
+    ok "global HelmRelease $c Ready"
+  else
+    bad "global HelmRelease $c" "not Ready"
+  fi
 done
 
 if kubectl --context "$SITE" -n nico-rest wait pod/nico-rest-site-agent-0 --for=condition=Ready --timeout=15m >/dev/null 2>&1; then
@@ -26,7 +34,7 @@ for _ in $(seq 1 30); do
 done
 if [ "$status" = "Registered true" ]; then ok "REST reports the site Registered and online"; else bad "REST site status" "$status"; fi
 
-if [ -n "${LICENSE_TOKEN:-}" ]; then
+if [ "$MODE" = flux ] && [ -n "${LICENSE_TOKEN:-}" ]; then
   if kubectl --context "$GLOBAL" wait nodeproviders.management.loft.sh/nico-e2e --for=jsonpath='{.status.phase}'=Available --timeout=10m >/dev/null 2>&1; then
     ok "NodeProvider nico-e2e Available"
   else

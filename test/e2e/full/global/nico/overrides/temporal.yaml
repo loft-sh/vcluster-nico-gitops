@@ -2,4 +2,4 @@ server:
   frontend:
     externalService:
       annotations:
-        metallb.io/loadBalancerIPs: TEMPORAL_IP
+        metallb.io/loadBalancerIPs: 172.18.255.202

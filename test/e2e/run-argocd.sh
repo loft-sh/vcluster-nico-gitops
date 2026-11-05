@@ -1,89 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ENV=${1:?usage: test/e2e/run-argocd.sh <site|site-dpu>}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 : "${GITOPS_URL:?}" "${GITOPS_COMMIT:?}" "${GIT_TOKEN:?}"
+. "$ROOT/test/e2e/argocd-lib.sh"
 CTX=$(kubectl config current-context)
-REPO=$GITOPS_URL.git
-ENV_PATH=test/e2e/argocd/site/nico
-ARGO_VERSION=$(awk '/^dpf:/ {f = 1} f && $1 == "argo-cd:" {print $2; exit}' "$ROOT/versions.yaml")
+ENV_PATH=test/e2e/$ENV/nico
 
-helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
-helm install argocd argo/argo-cd --version "$ARGO_VERSION" -n argocd --create-namespace --wait \
-  --set dex.enabled=false --set notifications.enabled=false --set applicationSet.replicas=0 >/dev/null
-
-kubectl -n argocd apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: vcluster-nico-gitops
-  labels:
-    argocd.argoproj.io/secret-type: repository
-stringData:
-  type: git
-  url: $REPO
-  username: x-access-token
-  password: $GIT_TOKEN
-EOF
+argocd_install "$CTX"
 
 kubectl apply -f "$ROOT/test/e2e/vault-dev.yaml"
 kubectl -n vault rollout status deploy/vault --timeout=300s
 TOKEN=$("$ROOT/test/e2e/vault-setup.sh")
-NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX"
+FLAGS=()
+[ "$ENV" = site-dpu ] && FLAGS=(--dpu)
+NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX" "${FLAGS[@]}"
 
-root() {
-  cat <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: nico-$1
-  namespace: argocd
-spec:
-  project: default
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  sources:
-    - repoURL: $REPO
-      targetRevision: $GITOPS_COMMIT
-      path: patterns/argocd/$1
-      helm:
-        valueFiles:
-          - \$env/$ENV_PATH/settings.yaml
-        valuesObject:
-          gitops:
-            repoURL: $REPO
-            targetRevision: $GITOPS_COMMIT
-          environment:
-            repoURL: $REPO
-            targetRevision: $GITOPS_COMMIT
-            path: $ENV_PATH
-    - repoURL: $REPO
-      targetRevision: $GITOPS_COMMIT
-      ref: env
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-EOF
-}
+API_VIP=$(kubectl get endpoints kubernetes -n default -o jsonpath='{.subsets[0].addresses[0].ip}')
+DATA="{dpfApiServerVip: \"$API_VIP\"}"
 
-synced() {
-  local end=$((SECONDS + $2)) s=
-  until [ "$s" = "Synced Healthy Succeeded" ]; do
-    [ $SECONDS -lt $end ] || { echo "application/$1 not synced: ${s:-missing}"; return 1; }
-    sleep 10
-    s=$(kubectl -n argocd get "application/$1" -o jsonpath='{.status.sync.status} {.status.health.status} {.status.operationState.phase}' 2>/dev/null)
-  done
-}
-
-root site-base | kubectl apply -f -
+argocd_root "$CTX" site-base "$ENV_PATH" "$DATA"
 echo "waiting for the site-base layer"
-synced cert-manager 1200
-synced site-prereqs 1200
+argocd_synced "$CTX" cert-manager 1200
+argocd_synced "$CTX" site-prereqs 1200
 
-root site | kubectl apply -f -
+if [ "$ENV" = site-dpu ]; then
+  argocd_root "$CTX" site-dpu "$ENV_PATH" "$DATA"
+  echo "waiting for the site-dpu layer"
+  for app in argo-cd kamaji kamaji-datastore maintenance-operator node-feature-discovery dpf-operator dpf-config; do
+    argocd_synced "$CTX" "$app" 2700
+  done
+fi
+
+argocd_root "$CTX" site "$ENV_PATH" "$DATA"
 echo "waiting for NICo Core"
-synced nico 2400
+argocd_synced "$CTX" nico 2400
 
-MODE=argocd "$ROOT/test/e2e/assert.sh" site
+MODE=argocd "$ROOT/test/e2e/assert.sh" "$ENV"

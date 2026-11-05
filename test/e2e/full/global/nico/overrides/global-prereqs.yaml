@@ -1,4 +1,4 @@
 siteManager:
   external:
     annotations:
-      metallb.io/loadBalancerIPs: SITE_MANAGER_IP
+      metallb.io/loadBalancerIPs: 172.18.255.203

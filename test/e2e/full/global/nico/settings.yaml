@@ -6,8 +6,8 @@ metadata:
   labels:
     reconcile.fluxcd.io/watch: Enabled
 data:
-  platformHost: PLATFORM_IP
-  platformOidcIssuer: https://PLATFORM_IP/oidc
-  siteManagerHost: SITE_MANAGER_HOST
+  platformHost: 172.18.255.200
+  platformOidcIssuer: https://172.18.255.200/oidc
+  siteManagerHost: 172-18-255-203.nip.io
   storageClass: standard
   nicoOrg: vcluster-autonodes
