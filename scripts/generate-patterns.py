@@ -26,6 +26,7 @@ REPOS = {
     "mellanox": "oci://ghcr.io/mellanox",
     "nico": "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts",
     "hashicorp": "https://helm.releases.hashicorp.com",
+    "redhat-cop": "https://redhat-cop.github.io/vault-config-operator",
 }
 
 NICO = V["nico"]["version"].lstrip("v")
@@ -51,6 +52,19 @@ COMPONENTS = {
                          {"kind": "PersistentVolumeClaim", "jsonPointers": ["/spec/storageClassName", "/spec/volumeName"]}], settings=[("platformHost", "config.loftHost")]),
         dict(name="nico-provider", gitops="./charts/nico-provider", ns="vcluster-platform",
              deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
+    ],
+    "vault-config": [
+        dict(name="vault-config-operator", repo=("redhat-cop", "vault-config-operator", V["vault-config-operator"]),
+             ns="vault-config-operator", deps=["cert-manager"], defaults=True, crds="CreateReplace",
+             settings=[("vaultAddr", "env[0].value")]),
+        dict(name="vault-config", gitops="./charts/vault-config", ns="vault-config-operator", deps=["vault-config-operator"],
+             settings=[("vaultAddr", "address"), ("vaultPrefix", "prefix"), ("vaultKvMount", "kvMount"),
+                       ("vaultPkiMount", "pkiMount"), ("vaultPkiRole", "pkiRole"), ("vaultCertManagerAuthMount", "authMount"),
+                       ("vaultCertManagerRole", "certManager.role"), ("vaultCaCommonName", "ca.commonName", True),
+                       ("vaultCaKeyType", "ca.keyType", True), ("vaultCaKeyBits", "ca.keyBits", True),
+                       ("vaultCaTtl", "ca.ttl", True), ("vaultCertTtl", "certTtl", True),
+                       ("vaultStaticToken", "staticToken.enabled", True), ("vaultDpu", "dpu.enabled", True),
+                       ("vaultGlobal", "global.enabled", True), ("vaultGlobalKubernetesHost", "global.kubernetesHost", True)]),
     ],
     "site-vault": [
         dict(name="vault", repo=("hashicorp", "vault", V["vault"]["chart"]), ns="vault", defaults=True, disableWait=True,
@@ -98,9 +112,10 @@ COMPONENTS = {
     ],
 }
 
-SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
+SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "vault-config": ["redhat-cop"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
                  "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["loft", "nico"]}
-SCOPE_TITLE = {"global": "global control plane", "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
+SCOPE_TITLE = {"global": "global control plane", "vault-config": "NICo Vault configuration",
+               "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
                "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
 
 
@@ -116,8 +131,11 @@ def release(c):
     values_from = []
     if c.get("defaults"):
         values_from.append({"kind": "ConfigMap", "name": f"gitops-defaults-{c['name']}", "valuesKey": "values.yaml"})
-    for key, path in c.get("settings", []):
-        values_from.append({"kind": "ConfigMap", "name": "gitops-settings", "valuesKey": key, "targetPath": path})
+    for key, path, *optional in c.get("settings", []):
+        ref = {"kind": "ConfigMap", "name": "gitops-settings", "valuesKey": key, "targetPath": path}
+        if optional:
+            ref["optional"] = True
+        values_from.append(ref)
     values_from.append({"kind": "ConfigMap", "name": f"gitops-overrides-{c['name']}", "valuesKey": "values.yaml",
                         "optional": True})
     timeout = c.get("timeout", "15m")
@@ -130,6 +148,9 @@ def release(c):
         "install": {"createNamespace": True, "timeout": timeout, "remediation": {"retries": 3}},
         "upgrade": {"timeout": timeout, "remediation": {"retries": 3}},
     }
+    if c.get("crds"):
+        spec["install"]["crds"] = c["crds"]
+        spec["upgrade"]["crds"] = c["crds"]
     if c.get("disableWait"):
         spec["install"]["disableWait"] = True
         spec["upgrade"]["disableWait"] = True
@@ -178,7 +199,7 @@ def argo_component(c, wave):
     value_files.append(f"$env/{{path}}/overrides/{c['name']}.yaml")
     out["valueFiles"] = value_files
     if c.get("settings"):
-        out["settings"] = [{"key": k, "path": p} for k, p in c["settings"]]
+        out["settings"] = [dict({"key": k, "path": p}, **({"optional": True} if o else {})) for k, p, *o in c["settings"]]
     if c.get("values"):
         out["values"] = c["values"]
     return out
@@ -201,7 +222,7 @@ for scope in COMPONENTS:
         a["valueFiles"] = [v.replace("{scope}", scope) for v in a["valueFiles"]]
         comps.append(a)
     values = {
-        "gitops": {"repoURL": "https://github.com/example-org/vcluster-nico-gitops.git", "targetRevision": "v0.1.0"},
+        "gitops": {"repoURL": "https://github.com/example-org/vcluster-nico-gitops.git", "targetRevision": "v0.2.0"},
         "environment": {"repoURL": "https://github.com/example-org/nico-environments.git", "targetRevision": "main",
                         "path": f"clusters/{'global' if scope == 'global' else 'site-1'}/nico"},
         "argocd": {"namespace": "argocd", "project": "default"},

@@ -19,12 +19,29 @@ Each cluster has a `nico/settings.yaml`. Anything else goes in `nico/overrides/<
 | `siteId` | empty until the site is registered |
 | `temporalHost` | `temporal.example.com` |
 | `vaultAddr` | `https://vault.example.com` |
-| `vaultKvMount` | `nico-kv` |
-| `vaultPkiMount` | `nico-pki` |
+| `vaultKvMount` | `nico/kv` |
+| `vaultPkiMount` | `nico/pki` |
 | `vaultPkiRole` | `nico-cluster` |
-| `vaultCertManagerAuthMount` | `kubernetes` |
+| `vaultCertManagerAuthMount` | `nico/kubernetes` |
 | `vaultCertManagerRole` | `cert-manager` |
 | `storageClass` | empty for the default |
+
+## Vault config
+
+The `vault-config` layer uses the site's Vault keys above, plus these. Only `vaultPrefix` is required. The others default to the examples. Mounts must sit under `vaultPrefix`.
+
+| Key | Example |
+|---|---|
+| `vaultPrefix` | `nico` |
+| `vaultCaCommonName` | `nico-ca` |
+| `vaultCaKeyType` | `ec` |
+| `vaultCaKeyBits` | `"384"` |
+| `vaultCaTtl` | `87600h` |
+| `vaultCertTtl` | `720h` |
+| `vaultStaticToken` | `"true"` |
+| `vaultDpu` | `"true"` on DPU sites |
+| `vaultGlobal` | `"false"` |
+| `vaultGlobalKubernetesHost` | the global API server, if `vaultGlobal` is on |
 
 ## DPU sites
 

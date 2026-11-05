@@ -1,0 +1,31 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: PKISecretEngineConfig
+metadata:
+  name: {{ include "vc.name" .Values.pkiMount }}-root-ca
+  annotations:
+    {{- include "vc.keep" . | nindent 4 }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  path: {{ .Values.pkiMount }}
+  type: root
+  privateKeyType: internal
+  keyType: {{ .Values.ca.keyType }}
+  keyBits: {{ int .Values.ca.keyBits }}
+  commonName: {{ .Values.ca.commonName }}
+  TTL: {{ .Values.ca.ttl }}
+  issuingCertificates:
+    - {{ .Values.address }}/v1/{{ .Values.pkiMount }}/ca
+  CRLDistributionPoints:
+    - {{ .Values.address }}/v1/{{ .Values.pkiMount }}/crl
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: PKISecretEngineRole
+metadata:
+  name: {{ include "vc.name" (printf "%s-%s" .Values.pkiMount .Values.pkiRole) }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  path: {{ .Values.pkiMount }}
+  name: {{ .Values.pkiRole }}
+  TTL: {{ .Values.certTtl }}
+  maxTTL: {{ .Values.certTtl }}
+  {{- toYaml .Values.pkiRoleSpec | nindent 2 }}

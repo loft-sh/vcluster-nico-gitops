@@ -10,7 +10,8 @@ unchanged, except nico-vault-token, which is replaced when NICO_VAULT_TOKEN is s
 
   --dpu              also create the secrets the DPU management layer (site-dpu) needs
   NICO_VAULT_TOKEN   Vault token for nico-api, with read/write on the NICo KV mount and
-                     issue/sign on the NICo PKI role (see docs/prerequisites.md)
+                     issue/sign on the NICo PKI role (see docs/prerequisites.md). With the
+                     vault-config layer, leave it out and run scripts/mint-nico-vault-token.sh
 EOF
   exit 2
 }
@@ -74,7 +75,7 @@ if [ -n "${NICO_VAULT_TOKEN:-}" ]; then
     --dry-run=client -o yaml | k apply -f - >/dev/null
   echo "stored nico-system/nico-vault-token"
 elif ! exists nico-system nico-vault-token; then
-  echo "nico-system/nico-vault-token is missing: re-run with NICO_VAULT_TOKEN set, or use the site-vault layer, which creates it" >&2
+  echo "nico-system/nico-vault-token is missing: run scripts/mint-nico-vault-token.sh after the vault-config layer, re-run with NICO_VAULT_TOKEN set, or use the site-vault layer" >&2
 fi
 
 if [ "$DPU" = true ]; then

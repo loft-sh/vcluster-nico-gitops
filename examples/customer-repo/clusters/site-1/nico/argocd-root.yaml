@@ -1,6 +1,45 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: nico-vault-config
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  sources:
+  - repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
+    targetRevision: v0.2.0
+    path: patterns/argocd/vault-config
+    helm:
+      valueFiles:
+      - $env/clusters/site-1/nico/settings.yaml
+      valuesObject:
+        gitops:
+          repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
+          targetRevision: v0.2.0
+        environment:
+          repoURL: https://github.com/example-org/nico-environments.git
+          targetRevision: main
+          path: clusters/site-1/nico
+  - repoURL: https://github.com/example-org/nico-environments.git
+    targetRevision: main
+    ref: env
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: nico-site-base
   namespace: argocd
 spec:
@@ -10,7 +49,7 @@ spec:
     namespace: argocd
   sources:
   - repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-    targetRevision: v0.1.0
+    targetRevision: v0.2.0
     path: patterns/argocd/site-base
     helm:
       valueFiles:
@@ -18,7 +57,7 @@ spec:
       valuesObject:
         gitops:
           repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-          targetRevision: v0.1.0
+          targetRevision: v0.2.0
         environment:
           repoURL: https://github.com/example-org/nico-environments.git
           targetRevision: main
@@ -49,7 +88,7 @@ spec:
     namespace: argocd
   sources:
   - repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-    targetRevision: v0.1.0
+    targetRevision: v0.2.0
     path: patterns/argocd/site
     helm:
       valueFiles:
@@ -57,7 +96,7 @@ spec:
       valuesObject:
         gitops:
           repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-          targetRevision: v0.1.0
+          targetRevision: v0.2.0
         environment:
           repoURL: https://github.com/example-org/nico-environments.git
           targetRevision: main

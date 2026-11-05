@@ -9,9 +9,10 @@ data:
   siteId: ""
   temporalHost: temporal.example.com
   vaultAddr: https://vault.example.com
-  vaultKvMount: nico-kv
-  vaultPkiMount: nico-pki
+  vaultPrefix: nico
+  vaultKvMount: nico/kv
+  vaultPkiMount: nico/pki
   vaultPkiRole: nico-cluster
-  vaultCertManagerAuthMount: kubernetes
+  vaultCertManagerAuthMount: nico/kubernetes
   vaultCertManagerRole: cert-manager
   storageClass: ""

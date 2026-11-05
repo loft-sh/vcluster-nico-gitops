@@ -1,0 +1,23 @@
+{{- $subjects := list (dict "name" .Values.operator.serviceAccount "namespace" .Release.Namespace) }}
+{{- $subjects = append $subjects (dict "name" .Values.secretsServiceAccount "namespace" .Values.nico.namespace) }}
+{{- if not (include "vc.on" .Values.staticToken.enabled) }}
+{{- $subjects = append $subjects (dict "name" .Values.nico.apiServiceAccount "namespace" .Values.nico.namespace) }}
+{{- end }}
+{{- if include "vc.on" .Values.dpu.enabled }}
+{{- $subjects = append $subjects (dict "name" .Values.secretsServiceAccount "namespace" .Values.dpu.namespace) }}
+{{- end }}
+{{- range $subjects }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "vc.name" (printf "%s-%s-vault-auth" .namespace .name) }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: {{ .name }}
+    namespace: {{ .namespace }}
+{{- end }}

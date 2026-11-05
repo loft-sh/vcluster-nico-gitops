@@ -1,0 +1,47 @@
+{{- $kv := .Values.kvMount }}
+{{- $pki := .Values.pkiMount }}
+{{- $role := .Values.pkiRole }}
+{{- $policies := dict }}
+{{- $_ := set $policies "nico-app" (printf `path "%[1]s/data/machines/*"       { capabilities = ["create", "read", "update", "patch", "delete", "list"] }
+path "%[1]s/metadata/machines/*"   { capabilities = ["read", "list", "delete"] }
+path "%[1]s/delete/machines/*"     { capabilities = ["update"] }
+path "%[1]s/undelete/machines/*"   { capabilities = ["update"] }
+path "%[1]s/destroy/machines/*"    { capabilities = ["update"] }
+path "%[1]s/data/nico/*"           { capabilities = ["read", "list"] }
+path "%[2]s/sign/%[3]s"            { capabilities = ["create", "update"] }
+path "%[2]s/issue/%[3]s"           { capabilities = ["create", "update"] }
+path "%[2]s/roles/%[3]s"           { capabilities = ["read"] }
+path "%[2]s/cert/ca"               { capabilities = ["read"] }
+path "%[2]s/ca"                    { capabilities = ["read"] }
+` $kv $pki $role) }}
+{{- $_ := set $policies "nico-system" (printf `path "%[1]s/data/nico-system/*"     { capabilities = ["create", "update", "read"] }
+path "%[1]s/metadata/nico-system/*" { capabilities = ["create", "update", "read", "list"] }
+` $kv) }}
+{{- $_ := set $policies "cert-manager" (printf `path "%s/sign/%s" { capabilities = ["update"] }
+` $pki $role) }}
+{{- if include "vc.on" .Values.dpu.enabled }}
+{{- $_ := set $policies "dpf" (printf `path "%[1]s/data/dpf/*"     { capabilities = ["read"] }
+path "%[1]s/metadata/dpf/*" { capabilities = ["read", "list"] }
+` $kv) }}
+{{- end }}
+{{- if include "vc.on" .Values.global.enabled }}
+{{- range $name := list "nico-rest" "temporal" }}
+{{- $_ := set $policies (printf "%s-db" $name) (printf `path "%[1]s/data/%[2]s/*"     { capabilities = ["create", "update", "read"] }
+path "%[1]s/metadata/%[2]s/*" { capabilities = ["create", "update", "read", "list"] }
+` $kv $name) }}
+{{- end }}
+{{- end }}
+{{- range $name, $rules := $policies }}
+{{- $full := include "vc.policy" (dict "root" $ "name" $name) }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: Policy
+metadata:
+  name: {{ $full }}
+spec:
+  {{- include "vc.auth" $ | nindent 2 }}
+  type: acl
+  name: {{ $full }}
+  policy: |
+    {{- $rules | nindent 4 }}
+{{- end }}

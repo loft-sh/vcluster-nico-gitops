@@ -1,0 +1,77 @@
+{{- range .Values.components }}
+{{- $c := . }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $.Values.namePrefix }}{{ $c.name }}
+  namespace: {{ $.Values.argocd.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: {{ $c.wave | quote }}
+    argocd.argoproj.io/compare-options: ServerSideDiff={{ $c.serverSideDiff }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ $.Values.argocd.project }}
+  destination:
+    server: {{ $.Values.destination.server }}
+    namespace: {{ $c.namespace }}
+  {{- with $c.ignoreDifferences }}
+  ignoreDifferences:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  sources:
+    {{- if $c.source.gitops }}
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
+      path: {{ $c.source.path }}
+    {{- else }}
+    - repoURL: {{ $c.source.repoURL }}
+      chart: {{ $c.source.chart }}
+      targetRevision: {{ $c.source.targetRevision }}
+    {{- end }}
+      helm:
+        releaseName: {{ $c.releaseName }}
+        ignoreMissingValueFiles: true
+        valueFiles:
+          {{- range $c.valueFiles }}
+          - {{ replace "{path}" $.Values.environment.path . }}
+          {{- end }}
+        {{- with $c.settings }}
+        parameters:
+          {{- range . }}
+          {{- if or (not .optional) (hasKey $.Values.data .key) }}
+          - name: {{ .path }}
+            value: {{ index $.Values.data .key | default "" | quote }}
+            forceString: true
+          {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- with $c.values }}
+        valuesObject:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+    - repoURL: {{ $.Values.gitops.repoURL }}
+      targetRevision: {{ $.Values.gitops.targetRevision }}
+      ref: gitops
+    - repoURL: {{ $.Values.environment.repoURL }}
+      targetRevision: {{ $.Values.environment.targetRevision }}
+      ref: env
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      {{- if $c.ignoreDifferences }}
+      - RespectIgnoreDifferences=true
+      {{- end }}
+    retry:
+      limit: 20
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+{{- end }}
