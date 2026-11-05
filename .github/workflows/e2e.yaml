@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [site, site-dpu]
+        env: [site, site-dpu, site-vault]
     env:
       GITOPS_URL: https://github.com/${{ github.repository }}
       GITOPS_BRANCH: ${{ github.head_ref || github.ref_name }}

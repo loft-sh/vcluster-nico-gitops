@@ -25,6 +25,7 @@ REPOS = {
     "nvidia-charts": "oci://ghcr.io/nvidia/charts",
     "mellanox": "oci://ghcr.io/mellanox",
     "nico": "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts",
+    "hashicorp": "https://helm.releases.hashicorp.com",
 }
 
 NICO = V["nico"]["version"].lstrip("v")
@@ -47,6 +48,13 @@ COMPONENTS = {
              deps=["cert-manager"], defaults=True, settings=[("platformHost", "config.loftHost")]),
         dict(name="nico-provider", gitops="./charts/nico-provider", ns="vcluster-platform",
              deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
+    ],
+    "site-vault": [
+        dict(name="vault", repo=("hashicorp", "vault", V["vault"]["chart"]), ns="vault", defaults=True, disableWait=True,
+             settings=[("storageClass", "server.dataStorage.storageClass")]),
+        dict(name="vault-unseal", gitops="./charts/vault-unseal", ns="vault", deps=["vault"],
+             settings=[("vaultKvMount", "kvMount"), ("vaultPkiMount", "pki.mount"), ("vaultPkiRole", "pki.role"),
+                       ("vaultCertManagerAuthMount", "certManager.authMount"), ("vaultCertManagerRole", "certManager.role")]),
     ],
     "site-base": [
         CERT_MANAGER,
@@ -84,9 +92,9 @@ COMPONENTS = {
     ],
 }
 
-SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-base": ["jetstack"],
+SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
                  "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["nico"]}
-SCOPE_TITLE = {"global": "global control plane", "site-base": "NICo site base layer",
+SCOPE_TITLE = {"global": "global control plane", "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
                "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
 
 
@@ -241,6 +249,12 @@ pin("charts/global-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V[
 pin("charts/site-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
 pin("charts/temporal-namespaces/values.yaml", [(["adminToolsImage"], f"temporalio/admin-tools:{V['temporal-admin-tools']}")])
 pin("charts/kamaji-datastore/values.yaml", [(["kubectlImage"], f"alpine/k8s:{V['kubectl']}")])
+pin("charts/vault-unseal/values.yaml", [(["image"], f"alpine/k8s:{V['kubectl']}")])
+pin("values/site-vault/vault.yaml", [(["server", "image", "tag"], V["vault"]["image"])])
+with open(f"{R}/test/e2e/vault-dev.yaml") as f:
+    dev = re.sub(r"hashicorp/vault:\S+", f"hashicorp/vault:{V['vault']['image']}", f.read())
+with open(f"{R}/test/e2e/vault-dev.yaml", "w") as f:
+    f.write(dev)
 
 TOML_PINS = [(re.compile(r'(helm_version = ")[^"]*(")'), IMAGES.lstrip("v")),
              (re.compile(r'(docker_image_tag = ")[^"]*(")'), IMAGES)]

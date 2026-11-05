@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENV=${1:?usage: test/e2e/run.sh <site|site-dpu>}
+ENV=${1:?usage: test/e2e/run.sh <site|site-dpu|site-vault>}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 : "${GITOPS_URL:?}" "${GITOPS_BRANCH:?}" "${GITOPS_COMMIT:?}" "${GIT_TOKEN:?}"
 CTX=$(kubectl config current-context)
 
 flux install --components=source-controller,kustomize-controller,helm-controller
 
-kubectl apply -f "$ROOT/test/e2e/vault-dev.yaml"
-kubectl -n vault rollout status deploy/vault --timeout=300s
-TOKEN=$("$ROOT/test/e2e/vault-setup.sh")
+TOKEN=
+if [ "$ENV" != site-vault ]; then
+  kubectl apply -f "$ROOT/test/e2e/vault-dev.yaml"
+  kubectl -n vault rollout status deploy/vault --timeout=300s
+  TOKEN=$("$ROOT/test/e2e/vault-setup.sh")
+fi
 
 FLAGS=()
 [ "$ENV" = site-dpu ] && FLAGS=(--dpu)
@@ -24,6 +27,7 @@ kubectl kustomize "$ROOT/test/e2e/$ENV/nico" \
   | kubectl apply -f -
 
 layers=(nico-site-base)
+[ "$ENV" = site-vault ] && layers=(nico-site-vault nico-site-base)
 [ "$ENV" = site-dpu ] && layers+=(nico-site-dpu)
 for k in "${layers[@]}"; do
   echo "waiting for layer $k"

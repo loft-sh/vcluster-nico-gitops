@@ -7,6 +7,7 @@ GitOps setup for NICo sites and the global control plane. Reference it from your
 | Layer | Installs | Needed by |
 |---|---|---|
 | `global` | vCluster Platform, NICo REST, Temporal | the global cluster |
+| `site-vault` | Vault, unsealed automatically. A stop-gap, see [docs/vault.md](docs/vault.md) | sites without their own Vault |
 | `site-base` | cert-manager, Vault issuer, Postgres | every site |
 | `site-dpu` | DPF, for BlueField DPUs | DPU sites only |
 | `site` | NICo Core, site agent | every site |

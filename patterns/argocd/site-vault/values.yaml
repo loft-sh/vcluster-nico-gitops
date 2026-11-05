@@ -1,0 +1,50 @@
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
+  targetRevision: v0.1.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/site-1/nico
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories: []
+components:
+- name: vault
+  releaseName: vault
+  namespace: vault
+  wave: 0
+  source:
+    repoURL: https://helm.releases.hashicorp.com
+    chart: vault
+    targetRevision: 0.34.1
+  valueFiles:
+  - $gitops/values/site-vault/vault.yaml
+  - $env/{path}/overrides/vault.yaml
+  settings:
+  - key: storageClass
+    path: server.dataStorage.storageClass
+- name: vault-unseal
+  releaseName: vault-unseal
+  namespace: vault
+  wave: 1
+  source:
+    gitops: true
+    path: charts/vault-unseal
+  valueFiles:
+  - $env/{path}/overrides/vault-unseal.yaml
+  settings:
+  - key: vaultKvMount
+    path: kvMount
+  - key: vaultPkiMount
+    path: pki.mount
+  - key: vaultPkiRole
+    path: pki.role
+  - key: vaultCertManagerAuthMount
+    path: certManager.authMount
+  - key: vaultCertManagerRole
+    path: certManager.role

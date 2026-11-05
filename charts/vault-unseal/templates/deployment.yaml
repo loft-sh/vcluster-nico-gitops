@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-unseal
+  namespace: {{ .Values.vault.namespace }}
+data:
+  unseal.sh: |
+{{ .Files.Get "files/unseal.sh" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-unseal
+  namespace: {{ .Values.vault.namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault-unseal
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vault-unseal
+      annotations:
+        checksum/script: {{ .Files.Get "files/unseal.sh" | sha256sum }}
+    spec:
+      serviceAccountName: vault-unseal
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: unseal
+          image: {{ .Values.image }}
+          command: ["bash", "/scripts/unseal.sh"]
+          env:
+            - name: HOME
+              value: /tmp
+            - name: INTERVAL
+              value: {{ .Values.interval | quote }}
+            - name: VAULT_NAMESPACE
+              value: {{ .Values.vault.namespace }}
+            - name: STATEFULSET
+              value: {{ .Values.vault.statefulSet }}
+            - name: SERVICE
+              value: {{ .Values.vault.service }}
+            - name: REPLICAS
+              value: {{ .Values.vault.replicas | quote }}
+            - name: KEYS_SECRET
+              value: {{ .Values.vault.keysSecret }}
+            - name: KV_MOUNT
+              value: {{ .Values.kvMount }}
+            - name: PKI_MOUNT
+              value: {{ .Values.pki.mount }}
+            - name: PKI_ROLE
+              value: {{ .Values.pki.role }}
+            - name: PKI_COMMON_NAME
+              value: {{ .Values.pki.commonName }}
+            - name: AUTH_MOUNT
+              value: {{ .Values.certManager.authMount }}
+            - name: CERT_MANAGER_ROLE
+              value: {{ .Values.certManager.role }}
+            - name: CERT_MANAGER_SERVICE_ACCOUNT
+              value: {{ .Values.certManager.serviceAccount }}
+            - name: CERT_MANAGER_NAMESPACE
+              value: {{ .Values.certManager.namespace }}
+            - name: NICO_NAMESPACE
+              value: {{ .Values.nico.namespace }}
+            - name: NICO_TOKEN_SECRET
+              value: {{ .Values.nico.tokenSecret }}
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/ready"]
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: scripts
+          configMap:
+            name: vault-unseal
+        - name: tmp
+          emptyDir: {}

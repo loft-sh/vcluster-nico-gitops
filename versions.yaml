@@ -5,6 +5,9 @@ cert-manager: v1.20.2
 postgres: 14.5-alpine
 temporal-admin-tools: 1.26.2
 kubectl: 1.29.4
+vault:
+  chart: 0.34.1
+  image: 2.1.2
 dpf:
   operator: v26.4.0
   argo-cd: 9.4.1

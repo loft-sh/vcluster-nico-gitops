@@ -1,0 +1,26 @@
+global:
+  tlsDisable: true
+injector:
+  enabled: false
+server:
+  image:
+    repository: hashicorp/vault
+    tag: 2.1.2
+  authDelegator:
+    enabled: true
+  dataStorage:
+    enabled: true
+    size: 10Gi
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      config: "ui = false\ndisable_mlock = true\nlistener \"tcp\" {\n  tls_disable\
+        \ = 1\n  address = \"[::]:8200\"\n  cluster_address = \"[::]:8201\"\n}\nstorage\
+        \ \"raft\" {\n  path = \"/vault/data\"\n  retry_join {\n    leader_api_addr\
+        \ = \"http://vault-0.vault-internal:8200\"\n  }\n  retry_join {\n    leader_api_addr\
+        \ = \"http://vault-1.vault-internal:8200\"\n  }\n  retry_join {\n    leader_api_addr\
+        \ = \"http://vault-2.vault-internal:8200\"\n  }\n}\nservice_registration \"\
+        kubernetes\" {}\n"

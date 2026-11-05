@@ -69,7 +69,7 @@ if [ -n "${NICO_VAULT_TOKEN:-}" ]; then
     --dry-run=client -o yaml | k apply -f - >/dev/null
   echo "stored nico-system/nico-vault-token"
 elif ! exists nico-system nico-vault-token; then
-  echo "nico-system/nico-vault-token is missing: re-run with NICO_VAULT_TOKEN set before NICo starts" >&2
+  echo "nico-system/nico-vault-token is missing: re-run with NICO_VAULT_TOKEN set, or use the site-vault layer, which creates it" >&2
 fi
 
 if [ "$DPU" = true ]; then
