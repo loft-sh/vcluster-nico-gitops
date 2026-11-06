@@ -91,6 +91,7 @@ else
   echo "waiting for the site"
   kubectl --context "$S" -n flux-system wait kustomization/nico-vault-config --for=condition=Ready --timeout=30m
   kubectl --context "$S" -n flux-system wait kustomization/nico-site-base --for=condition=Ready --timeout=30m
+  kubectl --context "$S" -n flux-system wait helmrelease/nico --for=create --timeout=15m
   kubectl --context "$S" -n flux-system wait helmrelease/nico --for=condition=Ready --timeout=30m
 fi
 
