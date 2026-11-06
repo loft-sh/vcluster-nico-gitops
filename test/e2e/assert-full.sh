@@ -20,6 +20,7 @@ for c in cert-manager global-prereqs temporal temporal-namespaces nico-rest vclu
   fi
 done
 
+kubectl --context "$SITE" -n nico-rest wait pod/nico-rest-site-agent-0 --for=create --timeout=10m >/dev/null 2>&1 || true
 if kubectl --context "$SITE" -n nico-rest wait pod/nico-rest-site-agent-0 --for=condition=Ready --timeout=15m >/dev/null 2>&1; then
   ok "site agent Ready after registration"
 else

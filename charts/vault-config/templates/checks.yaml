@@ -1,0 +1,16 @@
+{{- $prefix := printf "%s/" (required "prefix is required" .Values.prefix) }}
+{{- $mounts := dict "kvMount" .Values.kvMount "pkiMount" .Values.pkiMount }}
+{{- if include "vc.on" .Values.staticToken.enabled }}
+{{- $_ := set $mounts "staticToken.mount" (include "vc.approle" .) }}
+{{- end }}
+{{- if include "vc.on" .Values.global.enabled }}
+{{- $_ := set $mounts "global.authMount" (include "vc.globalAuth" .) }}
+{{- if not .Values.global.kubernetesHost }}
+{{- fail "global.kubernetesHost is required when global.enabled is true" }}
+{{- end }}
+{{- end }}
+{{- range $key, $mount := $mounts }}
+{{- if not (hasPrefix $prefix $mount) }}
+{{- fail (printf "%s %q must be under the prefix %q" $key $mount $prefix) }}
+{{- end }}
+{{- end }}

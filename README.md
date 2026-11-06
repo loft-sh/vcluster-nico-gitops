@@ -7,6 +7,7 @@ GitOps setup for NICo sites and the global control plane. Reference it from your
 | Layer | Installs | Needed by |
 |---|---|---|
 | `global` | vCluster Platform, NICo REST, Temporal | the global cluster |
+| `vault-config` | Vault Config Operator, which sets up your Vault for NICo. See [docs/vault-config.md](docs/vault-config.md) | sites whose Vault isn't set up yet |
 | `site-vault` | Vault, unsealed automatically. A stop-gap, see [docs/vault.md](docs/vault.md) | sites without their own Vault |
 | `site-base` | cert-manager, Vault issuer, Postgres | every site |
 | `site-dpu` | DPF, for BlueField DPUs | DPU sites only |
@@ -42,6 +43,7 @@ NICo's charts and images come from `ghcr.io/loft-sh/vcluster-platform-nico`. To 
    ```bash
    NICO_VAULT_TOKEN=<token> scripts/bootstrap-site-secrets.sh --context <site> [--dpu]
    ```
+   With the `vault-config` layer, leave out `NICO_VAULT_TOKEN` and follow [docs/vault-config.md](docs/vault-config.md).
 5. Point your tool at the patterns:
    - Flux: add the `nico` folder to the cluster. Its `gitops.yaml` references `patterns/flux/<layer>`.
    - Argo CD: apply `nico/argocd-root.yaml`. It references `patterns/argocd/<layer>`.

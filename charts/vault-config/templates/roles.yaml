@@ -1,0 +1,53 @@
+{{- $sa := .Values.secretsServiceAccount }}
+{{- $roles := list
+  (dict "mount" .Values.authMount "name" .Values.certManager.role "policy" "cert-manager" "sa" .Values.certManager.serviceAccount "ns" .Values.certManager.namespace)
+  (dict "mount" .Values.authMount "name" "nico-api" "policy" "nico-app" "sa" .Values.nico.apiServiceAccount "ns" .Values.nico.namespace "ttl" .Values.nico.tokenTTL)
+  (dict "mount" .Values.authMount "name" "nico-system" "policy" "nico-system" "sa" $sa "ns" .Values.nico.namespace "ttl" 3600) }}
+{{- if include "vc.on" .Values.dpu.enabled }}
+{{- $roles = append $roles (dict "mount" .Values.authMount "name" "dpf" "policy" "dpf" "sa" $sa "ns" .Values.dpu.namespace "ttl" 3600) }}
+{{- end }}
+{{- if include "vc.on" .Values.global.enabled }}
+{{- $global := include "vc.globalAuth" . }}
+{{- $roles = append $roles (dict "mount" $global "name" "nico-rest-db" "policy" "nico-rest-db" "sa" $sa "ns" .Values.global.namespaces.nicoRest "ttl" 3600) }}
+{{- $roles = append $roles (dict "mount" $global "name" "temporal-db" "policy" "temporal-db" "sa" $sa "ns" .Values.global.namespaces.temporal "ttl" 3600) }}
+{{- end }}
+{{- range $roles }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: {{ include "vc.name" (printf "%s-%s" .mount .name) }}
+spec:
+  {{- include "vc.auth" $ | nindent 2 }}
+  path: {{ .mount }}
+  name: {{ .name }}
+  policies:
+    - {{ include "vc.policy" (dict "root" $ "name" .policy) }}
+  targetServiceAccounts:
+    - {{ .sa }}
+  targetNamespaces:
+    targetNamespaces:
+      - {{ .ns }}
+  {{- with .ttl }}
+  tokenTTL: {{ int . }}
+  {{- end }}
+{{- end }}
+{{- if include "vc.on" .Values.staticToken.enabled }}
+{{- $mount := include "vc.approle" . }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: AppRoleAuthEngineRole
+metadata:
+  name: {{ include "vc.name" (printf "%s-nico" $mount) }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  path: {{ $mount }}
+  name: nico
+  tokenPolicies:
+    - {{ include "vc.policy" (dict "root" . "name" "nico-app") }}
+  tokenTTL: {{ .Values.staticToken.ttl }}
+  tokenMaxTTL: {{ .Values.staticToken.ttl }}
+  tokenNumUses: 0
+  secretIDTTL: 10m
+  secretIDNumUses: 1
+{{- end }}

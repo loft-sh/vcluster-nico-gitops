@@ -40,9 +40,11 @@ spec:
         {{- with $c.settings }}
         parameters:
           {{- range . }}
+          {{- if or (not .optional) (hasKey $.Values.data .key) }}
           - name: {{ .path }}
             value: {{ index $.Values.data .key | default "" | quote }}
             forceString: true
+          {{- end }}
           {{- end }}
         {{- end }}
         {{- with $c.values }}

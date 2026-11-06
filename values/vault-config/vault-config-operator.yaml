@@ -1,0 +1,6 @@
+enableCertManager: true
+env:
+  - name: VAULT_ADDR
+    value: https://vault.example.com
+  - name: ENABLE_DRIFT_DETECTION
+    value: "true"

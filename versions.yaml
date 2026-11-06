@@ -8,6 +8,7 @@ kubectl: 1.29.4
 vault:
   chart: 0.34.1
   image: 2.1.2
+vault-config-operator: v1.0.5
 dpf:
   operator: v26.4.0
   argo-cd: 9.4.1

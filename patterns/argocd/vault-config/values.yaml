@@ -1,0 +1,83 @@
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
+  targetRevision: v0.2.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/site-1/nico
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories: []
+components:
+- name: vault-config-operator
+  releaseName: vault-config-operator
+  namespace: vault-config-operator
+  wave: 0
+  serverSideDiff: true
+  source:
+    repoURL: https://redhat-cop.github.io/vault-config-operator
+    chart: vault-config-operator
+    targetRevision: v1.0.5
+  valueFiles:
+  - $gitops/values/vault-config/vault-config-operator.yaml
+  - $env/{path}/overrides/vault-config-operator.yaml
+  settings:
+  - key: vaultAddr
+    path: env[0].value
+- name: vault-config
+  releaseName: vault-config
+  namespace: vault-config-operator
+  wave: 1
+  serverSideDiff: true
+  source:
+    gitops: true
+    path: charts/vault-config
+  valueFiles:
+  - $env/{path}/overrides/vault-config.yaml
+  settings:
+  - key: vaultAddr
+    path: address
+  - key: vaultPrefix
+    path: prefix
+  - key: vaultKvMount
+    path: kvMount
+  - key: vaultPkiMount
+    path: pkiMount
+  - key: vaultPkiRole
+    path: pkiRole
+  - key: vaultCertManagerAuthMount
+    path: authMount
+  - key: vaultCertManagerRole
+    path: certManager.role
+  - key: vaultCaCommonName
+    path: ca.commonName
+    optional: true
+  - key: vaultCaKeyType
+    path: ca.keyType
+    optional: true
+  - key: vaultCaKeyBits
+    path: ca.keyBits
+    optional: true
+  - key: vaultCaTtl
+    path: ca.ttl
+    optional: true
+  - key: vaultCertTtl
+    path: certTtl
+    optional: true
+  - key: vaultStaticToken
+    path: staticToken.enabled
+    optional: true
+  - key: vaultDpu
+    path: dpu.enabled
+    optional: true
+  - key: vaultGlobal
+    path: global.enabled
+    optional: true
+  - key: vaultGlobalKubernetesHost
+    path: global.kubernetesHost
+    optional: true

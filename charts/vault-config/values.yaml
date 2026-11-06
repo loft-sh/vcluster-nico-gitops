@@ -1,0 +1,59 @@
+address: https://vault.example.com
+prefix: nico
+kvMount: nico/kv
+pkiMount: nico/pki
+pkiRole: nico-cluster
+authMount: nico/kubernetes
+operator:
+  role: vault-config-operator
+  serviceAccount: vault-config-operator-controller-manager
+ca:
+  commonName: nico-ca
+  keyType: ec
+  keyBits: 384
+  ttl: 87600h
+certTtl: 720h
+pkiRoleSpec:
+  keyType: ec
+  keyBits: 384
+  allowAnyName: true
+  enforceHostnames: true
+  allowLocalhost: true
+  allowIPSans: true
+  requireCn: false
+  allowedURISans:
+    - spiffe://nico.local/*
+  serverFlag: true
+  clientFlag: true
+  keyUsage:
+    - DigitalSignature
+    - KeyAgreement
+    - KeyEncipherment
+  extKeyUsage:
+    - ServerAuth
+    - ClientAuth
+  notBeforeDuration: 30s
+secretsServiceAccount: vault-secrets
+certManager:
+  role: cert-manager
+  namespace: cert-manager
+  serviceAccount: cert-manager-vault
+nico:
+  namespace: nico-system
+  apiServiceAccount: nico-api
+  tokenTTL: 3600
+staticToken:
+  enabled: true
+  mount: ""
+  ttl: 87600h
+dpu:
+  enabled: false
+  namespace: dpf-operator-system
+global:
+  enabled: false
+  authMount: ""
+  kubernetesHost: ""
+  kubernetesCaCert: ""
+  namespaces:
+    nicoRest: nico-rest
+    temporal: temporal

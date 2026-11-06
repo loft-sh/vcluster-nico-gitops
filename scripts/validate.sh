@@ -18,6 +18,7 @@ helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo add nfd https://kubernetes-sigs.github.io/node-feature-discovery/charts >/dev/null
 helm repo add doca https://helm.ngc.nvidia.com/nvidia/doca >/dev/null
 helm repo add hashicorp https://helm.releases.hashicorp.com >/dev/null
+helm repo add redhat-cop https://redhat-cop.github.io/vault-config-operator >/dev/null
 helm repo update >/dev/null
 
 if [ -z "${NICO_CHARTS:-}" ]; then
@@ -38,20 +39,32 @@ check() {
 }
 settings() { awk -v k="$2:" '$1 == k { $1 = ""; sub(/^ /, ""); gsub(/"/, ""); print }' "$EXAMPLE/$1/nico/settings.yaml"; }
 
-for scope in global site-vault site-base site-dpu site; do
+for scope in global vault-config site-vault site-base site-dpu site; do
   check "flux pattern $scope" kubectl kustomize "$ROOT/patterns/flux/$scope"
 done
 for cluster in global site-1 site-dpu-1; do
   check "flux example $cluster" kubectl kustomize "$EXAMPLE/$cluster/nico"
 done
 check "argocd pattern global" helm template root "$ROOT/patterns/argocd/global" -f "$EXAMPLE/global/nico/settings.yaml"
-for scope in site-vault site-base site-dpu site; do
+for scope in vault-config site-vault site-base site-dpu site; do
   check "argocd pattern $scope" helm template root "$ROOT/patterns/argocd/$scope" -f "$EXAMPLE/site-dpu-1/nico/settings.yaml"
 done
 
 G=$EXAMPLE/global/nico/overrides
 S=$EXAMPLE/site-1/nico/overrides
 SITE_ID=11111111-2222-3333-4444-555555555555
+check "vault-config-operator" helm template vault-config-operator redhat-cop/vault-config-operator --version "$(ver vault-config-operator)" \
+  -n vault-config-operator -f "$ROOT/values/vault-config/vault-config-operator.yaml" --set "env[0].value=$(settings site-1 vaultAddr)"
+vault_config() {
+  local site=$1; shift
+  helm template vault-config "$ROOT/charts/vault-config" -n vault-config-operator --set "address=$(settings "$site" vaultAddr)" \
+    --set "prefix=$(settings "$site" vaultPrefix)" --set "kvMount=$(settings "$site" vaultKvMount)" \
+    --set "pkiMount=$(settings "$site" vaultPkiMount)" --set "pkiRole=$(settings "$site" vaultPkiRole)" \
+    --set "authMount=$(settings "$site" vaultCertManagerAuthMount)" --set "certManager.role=$(settings "$site" vaultCertManagerRole)" "$@"
+}
+check "vault-config" vault_config site-1
+check "vault-config with dpf" vault_config site-dpu-1 --set "dpu.enabled=$(settings site-dpu-1 vaultDpu)"
+check "vault-config with global" vault_config site-1 --set global.enabled=true --set global.kubernetesHost=https://10.0.0.10:6443
 check "vault" helm template vault hashicorp/vault --version "$(ver vault chart)" -n vault -f "$ROOT/values/site-vault/vault.yaml"
 check "vault-unseal" helm template vault-unseal "$ROOT/charts/vault-unseal" -n vault
 check "cert-manager" helm template cert-manager jetstack/cert-manager --version "$(ver cert-manager)" -n cert-manager --set crds.enabled=true

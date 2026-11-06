@@ -17,6 +17,11 @@ released() {
   fi
 }
 for app in cert-manager site-prereqs nico; do released "$app"; done
+if [ "$ENV" != site-vault ]; then
+  for app in vault-config-operator vault-config; do released "$app"; done
+  check "every Vault Config Operator object reconciled" kubectl -n vault-config-operator wait --for=condition=ReconcileSuccessful --timeout=300s --all \
+    secretenginemounts.redhatcop.redhat.io,authenginemounts.redhatcop.redhat.io,pkisecretengineconfigs.redhatcop.redhat.io,pkisecretengineroles.redhatcop.redhat.io,policies.redhatcop.redhat.io,kubernetesauthengineroles.redhatcop.redhat.io,approleauthengineroles.redhatcop.redhat.io
+fi
 check "ClusterIssuer vault-nico-issuer Ready (cert-manager logs in to Vault)" \
   kubectl wait clusterissuer/vault-nico-issuer --for=condition=Ready --timeout=120s
 check "every Certificate in nico-system Ready" kubectl -n nico-system wait certificate --all --for=condition=Ready --timeout=300s

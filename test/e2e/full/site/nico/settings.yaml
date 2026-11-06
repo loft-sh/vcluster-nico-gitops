@@ -9,9 +9,10 @@ data:
   siteId: ''
   temporalHost: 172.18.255.202
   vaultAddr: http://vault.vault.svc.cluster.local:8200
-  vaultKvMount: nico-kv
-  vaultPkiMount: nico-pki
+  vaultPrefix: nico
+  vaultKvMount: nico/kv
+  vaultPkiMount: nico/pki
   vaultPkiRole: nico-cluster
-  vaultCertManagerAuthMount: kubernetes
+  vaultCertManagerAuthMount: nico/kubernetes
   vaultCertManagerRole: cert-manager
   storageClass: standard

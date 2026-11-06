@@ -10,7 +10,7 @@ spec:
     namespace: argocd
   sources:
   - repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-    targetRevision: v0.1.0
+    targetRevision: v0.2.0
     path: patterns/argocd/global
     helm:
       valueFiles:
@@ -18,7 +18,7 @@ spec:
       valuesObject:
         gitops:
           repoURL: https://github.com/loft-sh/vcluster-nico-gitops.git
-          targetRevision: v0.1.0
+          targetRevision: v0.2.0
         environment:
           repoURL: https://github.com/example-org/nico-environments.git
           targetRevision: main

@@ -8,16 +8,14 @@ CTX=$(kubectl config current-context)
 
 flux install --components=source-controller,kustomize-controller,helm-controller
 
-TOKEN=
 if [ "$ENV" != site-vault ]; then
   kubectl apply -f "$ROOT/test/e2e/vault-dev.yaml"
   kubectl -n vault rollout status deploy/vault --timeout=300s
-  TOKEN=$("$ROOT/test/e2e/vault-setup.sh")
 fi
 
 FLAGS=()
 [ "$ENV" = site-dpu ] && FLAGS=(--dpu)
-NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX" "${FLAGS[@]}"
+"$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX" "${FLAGS[@]}"
 
 flux create secret git gitops-auth -n flux-system --url="$GITOPS_URL" --username=x-access-token --password="$GIT_TOKEN"
 API_VIP=$(kubectl get endpoints kubernetes -n default -o jsonpath='{.subsets[0].addresses[0].ip}')
@@ -26,8 +24,13 @@ kubectl kustomize "$ROOT/test/e2e/$ENV/nico" \
         -e "s|GITOPS_COMMIT|$GITOPS_COMMIT|g" -e "s|API_VIP|$API_VIP|g" \
   | kubectl apply -f -
 
-layers=(nico-site-base)
+layers=(nico-vault-config nico-site-base)
 [ "$ENV" = site-vault ] && layers=(nico-site-vault nico-site-base)
+if [ "$ENV" != site-vault ]; then
+  CHECKS=()
+  [ "$ENV" = site ] && CHECKS=(--jwt)
+  "$ROOT/test/e2e/vault-config.sh" --context "$CTX" "${CHECKS[@]}"
+fi
 [ "$ENV" = site-dpu ] && layers+=(nico-site-dpu)
 for k in "${layers[@]}"; do
   echo "waiting for layer $k"

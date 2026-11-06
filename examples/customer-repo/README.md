@@ -5,8 +5,8 @@ Copy `clusters/` into your repo.
 | Example | Layers |
 |---|---|
 | `global` | global |
-| `site-1` | site-base, site |
-| `site-dpu-1` | site-base, site-dpu, site |
+| `site-1` | vault-config, site-base, site |
+| `site-dpu-1` | vault-config, site-base, site-dpu, site |
 
 Each `nico/` folder has:
 - `settings.yaml` and `overrides/`: your values.

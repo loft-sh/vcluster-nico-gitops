@@ -18,6 +18,8 @@ Sites need outbound 443, 8100 and 7233 to these.
 
 ## Vault, per site
 
+The `vault-config` layer can create all of this. See [vault-config.md](vault-config.md). Otherwise:
+
 1. A KV v2 mount, e.g. `nico-kv`.
 2. A PKI mount, e.g. `nico-pki`, with a role, e.g. `nico-cluster`.
 3. Kubernetes auth, with a role for the service account `cert-manager-vault` in `cert-manager` that can sign on that role.

@@ -64,23 +64,34 @@ fi
 
 kubectl --context "$S" apply -f "$ROOT/test/e2e/vault-dev.yaml"
 kubectl --context "$S" -n vault rollout status deploy/vault --timeout=300s
-TOKEN=$(kubectl config use-context "$S" >/dev/null && "$ROOT/test/e2e/vault-setup.sh")
-NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$S"
+"$ROOT/scripts/bootstrap-site-secrets.sh" --context "$S"
+GLOBAL_API=https://$(docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' nico-global-control-plane):6443
 if [ "$MODE" = argocd ]; then
+  argocd_root "$S" vault-config test/e2e/full/site/nico
   argocd_root "$S" site-base test/e2e/full/site/nico
   argocd_root "$S" site test/e2e/full/site/nico
+  "$ROOT/test/e2e/vault-config.sh" --context "$S"
   echo "waiting for the global control plane"
   for app in cert-manager global-prereqs temporal temporal-namespaces nico-rest vcluster-platform nico-provider; do
     argocd_synced "$G" "$app" 2700
   done
   echo "waiting for the site"
-  for app in cert-manager site-prereqs nico; do argocd_synced "$S" "$app" 2400; done
+  for app in vault-config-operator vault-config cert-manager site-prereqs nico; do argocd_synced "$S" "$app" 2400; done
 else
   render "$ROOT/test/e2e/full/site/nico" | kubectl --context "$S" apply -f -
+  kubectl --context "$S" -n flux-system patch configmap gitops-settings --type merge \
+    -p "{\"data\":{\"vaultGlobal\":\"true\",\"vaultGlobalKubernetesHost\":\"$GLOBAL_API\"}}"
+  kubectl --context "$G" -n kube-system get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}' \
+    | jq -Rs '{global: {kubernetesCaCert: .}}' \
+    | kubectl --context "$S" -n flux-system create configmap gitops-overrides-vault-config --from-file=values.yaml=/dev/stdin
+  kubectl --context "$S" -n flux-system label configmap gitops-overrides-vault-config reconcile.fluxcd.io/watch=Enabled
+  "$ROOT/test/e2e/vault-config.sh" --context "$S" --global-context "$G"
   echo "waiting for the global control plane"
   kubectl --context "$G" -n flux-system wait kustomization/nico-global --for=condition=Ready --timeout=45m
   echo "waiting for the site"
+  kubectl --context "$S" -n flux-system wait kustomization/nico-vault-config --for=condition=Ready --timeout=30m
   kubectl --context "$S" -n flux-system wait kustomization/nico-site-base --for=condition=Ready --timeout=30m
+  kubectl --context "$S" -n flux-system wait helmrelease/nico --for=create --timeout=15m
   kubectl --context "$S" -n flux-system wait helmrelease/nico --for=condition=Ready --timeout=30m
 fi
 

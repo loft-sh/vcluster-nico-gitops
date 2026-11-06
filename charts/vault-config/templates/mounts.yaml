@@ -1,0 +1,81 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: SecretEngineMount
+metadata:
+  name: {{ include "vc.name" .Values.kvMount }}
+  annotations:
+    {{- include "vc.keep" . | nindent 4 }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  type: kv
+  path: {{ dir .Values.kvMount }}
+  name: {{ base .Values.kvMount }}
+  description: NICo secrets
+  options:
+    version: "2"
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: SecretEngineMount
+metadata:
+  name: {{ include "vc.name" .Values.pkiMount }}
+  annotations:
+    {{- include "vc.keep" . | nindent 4 }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  type: pki
+  path: {{ dir .Values.pkiMount }}
+  name: {{ base .Values.pkiMount }}
+  description: NICo certificates
+  config:
+    maxLeaseTTL: {{ .Values.ca.ttl }}
+{{- if include "vc.on" .Values.staticToken.enabled }}
+{{- $mount := include "vc.approle" . }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: AuthEngineMount
+metadata:
+  name: {{ include "vc.name" $mount }}
+  annotations:
+    {{- include "vc.keep" . | nindent 4 }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  type: approle
+  path: {{ dir $mount }}
+  name: {{ base $mount }}
+  description: NICo static token
+  config:
+    listingVisibility: hidden
+    maxLeaseTTL: {{ .Values.staticToken.ttl }}
+{{- end }}
+{{- if include "vc.on" .Values.global.enabled }}
+{{- $mount := include "vc.globalAuth" . }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: AuthEngineMount
+metadata:
+  name: {{ include "vc.name" $mount }}
+  annotations:
+    {{- include "vc.keep" . | nindent 4 }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  type: kubernetes
+  path: {{ dir $mount }}
+  name: {{ base $mount }}
+  description: Global cluster
+  config:
+    listingVisibility: hidden
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineConfig
+metadata:
+  name: {{ include "vc.name" $mount }}
+spec:
+  {{- include "vc.auth" . | nindent 2 }}
+  path: {{ dir $mount }}
+  name: {{ base $mount }}
+  kubernetesHost: {{ .Values.global.kubernetesHost }}
+  disableLocalCAJWT: true
+  {{- with .Values.global.kubernetesCaCert }}
+  kubernetesCACert: |
+    {{- . | nindent 4 }}
+  {{- end }}
+{{- end }}

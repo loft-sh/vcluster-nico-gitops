@@ -1,0 +1,149 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vault-config-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: vault-config-operator
+  targetNamespace: vault-config-operator
+  storageNamespace: vault-config-operator
+  chart:
+    spec:
+      chart: vault-config-operator
+      version: v1.0.5
+      sourceRef:
+        kind: HelmRepository
+        name: redhat-cop
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  dependsOn:
+  - name: cert-manager
+  valuesFrom:
+  - kind: ConfigMap
+    name: gitops-defaults-vault-config-operator
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultAddr
+    targetPath: env[0].value
+  - kind: ConfigMap
+    name: gitops-overrides-vault-config-operator
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vault-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: vault-config
+  targetNamespace: vault-config-operator
+  storageNamespace: vault-config-operator
+  chart:
+    spec:
+      chart: ./charts/vault-config
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-gitops
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: vault-config-operator
+  valuesFrom:
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultAddr
+    targetPath: address
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultPrefix
+    targetPath: prefix
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultKvMount
+    targetPath: kvMount
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultPkiMount
+    targetPath: pkiMount
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultPkiRole
+    targetPath: pkiRole
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCertManagerAuthMount
+    targetPath: authMount
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCertManagerRole
+    targetPath: certManager.role
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCaCommonName
+    targetPath: ca.commonName
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCaKeyType
+    targetPath: ca.keyType
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCaKeyBits
+    targetPath: ca.keyBits
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCaTtl
+    targetPath: ca.ttl
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultCertTtl
+    targetPath: certTtl
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultStaticToken
+    targetPath: staticToken.enabled
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultDpu
+    targetPath: dpu.enabled
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultGlobal
+    targetPath: global.enabled
+    optional: true
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: vaultGlobalKubernetesHost
+    targetPath: global.kubernetesHost
+    optional: true
+  - kind: ConfigMap
+    name: gitops-overrides-vault-config
+    valuesKey: values.yaml
+    optional: true
