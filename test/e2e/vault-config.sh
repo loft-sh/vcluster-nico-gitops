@@ -24,6 +24,16 @@ for _ in $(seq 60); do curl -sf "$VAULT_ADDR/v1/sys/health" >/dev/null && break;
 VAULT_TOKEN=root "$ROOT/scripts/bootstrap-vault-operator.sh" --context "$CTX" --kubernetes-host https://kubernetes.default.svc
 "$ROOT/scripts/mint-nico-vault-token.sh" --context "$CTX"
 
+echo "waiting for the operator to set up Vault"
+k -n vault-config-operator wait --for=condition=ReconcileSuccessful --timeout=15m --all \
+  secretenginemounts.redhatcop.redhat.io,authenginemounts.redhatcop.redhat.io,pkisecretengineconfigs.redhatcop.redhat.io,pkisecretengineroles.redhatcop.redhat.io,policies.redhatcop.redhat.io,kubernetesauthengineroles.redhatcop.redhat.io,approleauthengineroles.redhatcop.redhat.io >/dev/null
+for c in $(k -n nico-system get certificates.cert-manager.io -o json 2>/dev/null | jq -r '.items[] | select(.status.lastFailureTime) | .metadata.name'); do
+  k -n nico-system get certificates.cert-manager.io "$c" -o json | jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '.status.conditions = [.status.conditions[]? | select(.type != "Issuing")] + [{type: "Issuing", status: "True", reason: "ManuallyTriggered", message: "retried after Vault was set up", lastTransitionTime: $t, observedGeneration: .metadata.generation}]' \
+    | k replace --subresource=status -f - >/dev/null
+  echo "retried certificate nico-system/$c"
+done
+
 root() { curl -sS -H 'X-Vault-Token: root' "$@"; }
 login() {
   curl -sS -X POST "$VAULT_ADDR/v1/auth/$1/login" -d "$(jq -n --arg j "$2" --arg r "$3" '{jwt: $j, role: $r}')"

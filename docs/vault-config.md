@@ -50,7 +50,7 @@ The mounts and the CA stay in Vault if you remove the layer. Deleting them would
    ```
    It logs in as the operator, so it needs no admin token. `--rotate` replaces the token.
 
-`site-base` waits for Vault. If you take longer than an hour, reconcile `site-prereqs` again.
+`site-prereqs`' certificates wait until cert-manager can log in to Vault. If cert-manager logs in before the operator has set up the PKI, signing fails and cert-manager retries an hour later. To retry now, run `cmctl renew -n nico-system --all`.
 
 Vault checks every login with the cluster's TokenReview, as the service account that logs in. The layer gives the operator, `vault-secrets` and, without the static token, `nico-api` the `system:auth-delegator` role. `site-base` does the same for cert-manager.
 
