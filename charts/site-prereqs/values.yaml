@@ -33,3 +33,10 @@ postgres:
     enabled: true
     duration: 720h
     renewBefore: 360h
+firmwareMirror:
+  enabled: false
+  packages: []
+  nodeSelector: {}
+  hostPath: /var/lib/nico-firmware-mirror
+  fetchImage: alpine:3.20
+  serveImage: nginx:alpine

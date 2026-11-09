@@ -1,0 +1,133 @@
+{{- with .Values.firmwareMirror }}
+{{- if .enabled }}
+{{- $manifest := "" }}
+{{- range .packages }}
+{{- $manifest = printf "%s%s %s %s %s\n" $manifest .url .sha256 (.file | default "-") (.fileSha256 | default .sha256) }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firmware-mirror
+  namespace: {{ $.Values.namespaces.nico }}
+  labels:
+    app.kubernetes.io/name: firmware-mirror
+data:
+  manifest: |
+{{ $manifest | indent 4 }}
+  fetch.sh: |
+    set -eu
+    cd /srv/firmware
+    mkdir -p .tmp
+    while read -r url zip_sha member file_sha; do
+      [ -n "$url" ] || continue
+      if [ "$member" = "-" ]; then name=$(basename "$url"); else name=$(basename "$member"); fi
+      if [ -f "$name" ] && echo "$file_sha  $name" | sha256sum -c -s; then
+        echo "$name: present"
+        continue
+      fi
+      tries=0
+      until wget -q -T 60 -O .tmp/package "$url"; do
+        tries=$((tries + 1))
+        [ "$tries" -lt 5 ] || { echo "$url: download failed" >&2; exit 1; }
+        sleep 10
+      done
+      echo "$zip_sha  .tmp/package" | sha256sum -c -s || { echo "$url: package checksum does not match the vendor's" >&2; exit 1; }
+      if [ "$member" = "-" ]; then mv .tmp/package ".tmp/$name"; else unzip -p .tmp/package "$member" > ".tmp/$name"; fi
+      echo "$file_sha  .tmp/$name" | sha256sum -c -s || { echo "$name: checksum does not match Git" >&2; exit 1; }
+      mv ".tmp/$name" "$name"
+      rm -f .tmp/package
+      echo "$name: fetched"
+    done < /config/manifest
+  nginx.conf: |
+    worker_processes 1;
+    events { worker_connections 128; }
+    http {
+      access_log /dev/stdout;
+      error_log  /dev/stderr;
+      sendfile on;
+      server {
+        listen 80;
+        root /srv/firmware;
+        autoindex off;
+        location ~ /\. { deny all; }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firmware-mirror
+  namespace: {{ $.Values.namespaces.nico }}
+  labels:
+    app.kubernetes.io/name: firmware-mirror
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: firmware-mirror
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: firmware-mirror
+      annotations:
+        checksum/manifest: {{ $manifest | sha256sum }}
+    spec:
+      {{- with $.Values.firmwareMirror.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      initContainers:
+        - name: fetch
+          image: {{ $.Values.firmwareMirror.fetchImage }}
+          command: ["/bin/sh", "/config/fetch.sh"]
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: firmware
+              mountPath: /srv/firmware
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: "1", memory: 256Mi }
+      containers:
+        - name: nginx
+          image: {{ $.Values.firmwareMirror.serveImage }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: firmware
+              mountPath: /srv/firmware
+              readOnly: true
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits:   { cpu: 500m, memory: 128Mi }
+      volumes:
+        - name: config
+          configMap:
+            name: firmware-mirror
+        - name: firmware
+          hostPath:
+            path: {{ $.Values.firmwareMirror.hostPath }}
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firmware-mirror
+  namespace: {{ $.Values.namespaces.nico }}
+  labels:
+    app.kubernetes.io/name: firmware-mirror
+spec:
+  selector:
+    app.kubernetes.io/name: firmware-mirror
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+{{- end }}
+{{- end }}
