@@ -15,3 +15,6 @@ data:
   vaultCertManagerAuthMount: kubernetes
   vaultCertManagerRole: cert-manager
   storageClass: ""
+  telemetryEndpoint: https://gateway.example.com:4318
+  telemetrySite: site-1
+  telemetrySecret: site-relay-gateway

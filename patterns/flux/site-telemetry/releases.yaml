@@ -1,0 +1,50 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: site-relay
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: site-relay
+  targetNamespace: observability
+  storageNamespace: observability
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: 0.172.1
+      sourceRef:
+        kind: HelmRepository
+        name: open-telemetry
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  valuesFrom:
+  - kind: ConfigMap
+    name: gitops-defaults-site-relay
+    valuesKey: values.yaml
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: telemetryEndpoint
+    targetPath: config.exporters.otlp_http/gateway.endpoint
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: telemetrySite
+    targetPath: config.exporters.otlp_http/gateway.headers.X-Vcluster-Platform-Site
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: telemetrySite
+    targetPath: config.processors.resource/site.attributes[0].value
+  - kind: ConfigMap
+    name: gitops-settings
+    valuesKey: telemetrySecret
+    targetPath: extraVolumes[0].secret.secretName
+  - kind: ConfigMap
+    name: gitops-overrides-site-relay
+    valuesKey: values.yaml
+    optional: true

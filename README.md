@@ -11,6 +11,7 @@ GitOps setup for NICo sites and the global control plane. Reference it from your
 | `site-base` | cert-manager, Vault issuer, Postgres | every site |
 | `site-dpu` | DPF, for BlueField DPUs | DPU sites only |
 | `site` | NICo Core, site agent | every site |
+| `site-telemetry` | a relay that sends site telemetry to the Platform, see [docs/telemetry.md](docs/telemetry.md) | sites that send telemetry |
 
 ## Patterns
 

@@ -38,14 +38,14 @@ check() {
 }
 settings() { awk -v k="$2:" '$1 == k { $1 = ""; sub(/^ /, ""); gsub(/"/, ""); print }' "$EXAMPLE/$1/nico/settings.yaml"; }
 
-for scope in global site-vault site-base site-dpu site; do
+for scope in global site-vault site-base site-dpu site site-telemetry; do
   check "flux pattern $scope" kubectl kustomize "$ROOT/patterns/flux/$scope"
 done
 for cluster in global site-1 site-dpu-1; do
   check "flux example $cluster" kubectl kustomize "$EXAMPLE/$cluster/nico"
 done
 check "argocd pattern global" helm template root "$ROOT/patterns/argocd/global" -f "$EXAMPLE/global/nico/settings.yaml"
-for scope in site-vault site-base site-dpu site; do
+for scope in site-vault site-base site-dpu site site-telemetry; do
   check "argocd pattern $scope" helm template root "$ROOT/patterns/argocd/$scope" -f "$EXAMPLE/site-dpu-1/nico/settings.yaml"
 done
 
@@ -70,6 +70,12 @@ check "site-prereqs" helm template site-prereqs "$ROOT/charts/site-prereqs" -n n
 check "nico" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$S/nico.yaml"
 check "nico-site-agent" helm template nico-rest-site-agent "$NICO_CHARTS/nico-rest-site-agent" -n nico-rest \
   -f "$ROOT/values/site/nico-site-agent.yaml" --set "envConfig.CLUSTER_ID=$SITE_ID" --set "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE=$SITE_ID"
+check "site-relay" helm template site-relay oci://ghcr.io/open-telemetry/opentelemetry-helm-charts/opentelemetry-collector --version "$(ver opentelemetry-collector chart)" -n observability \
+  -f "$ROOT/values/site-telemetry/site-relay.yaml" \
+  --set-string "config.exporters.otlp_http/gateway.endpoint=$(settings site-1 telemetryEndpoint)" \
+  --set-string "config.exporters.otlp_http/gateway.headers.X-Vcluster-Platform-Site=$(settings site-1 telemetrySite)" \
+  --set-string "config.processors.resource/site.attributes[0].value=$(settings site-1 telemetrySite)" \
+  --set-string "extraVolumes[0].secret.secretName=$(settings site-1 telemetrySecret)"
 
 D=$EXAMPLE/site-dpu-1/nico/overrides
 check "argo-cd" helm template argo-cd argo/argo-cd --version "$(ver dpf argo-cd)" -n dpf-operator-system -f "$ROOT/values/site-dpu/argo-cd.yaml"

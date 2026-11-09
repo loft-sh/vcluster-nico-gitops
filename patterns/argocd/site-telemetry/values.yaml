@@ -1,0 +1,38 @@
+gitops:
+  repoURL: https://github.com/example-org/vcluster-nico-gitops.git
+  targetRevision: v0.1.0
+environment:
+  repoURL: https://github.com/example-org/nico-environments.git
+  targetRevision: main
+  path: clusters/site-1/nico
+argocd:
+  namespace: argocd
+  project: default
+destination:
+  server: https://kubernetes.default.svc
+namePrefix: ''
+data: {}
+ociRepositories:
+- ghcr.io/open-telemetry/opentelemetry-helm-charts
+components:
+- name: site-relay
+  releaseName: site-relay
+  namespace: observability
+  wave: 0
+  serverSideDiff: true
+  source:
+    repoURL: ghcr.io/open-telemetry/opentelemetry-helm-charts
+    chart: opentelemetry-collector
+    targetRevision: 0.172.1
+  valueFiles:
+  - $gitops/values/site-telemetry/site-relay.yaml
+  - $env/{path}/overrides/site-relay.yaml
+  settings:
+  - key: telemetryEndpoint
+    path: config.exporters.otlp_http/gateway.endpoint
+  - key: telemetrySite
+    path: config.exporters.otlp_http/gateway.headers.X-Vcluster-Platform-Site
+  - key: telemetrySite
+    path: config.processors.resource/site.attributes[0].value
+  - key: telemetrySecret
+    path: extraVolumes[0].secret.secretName

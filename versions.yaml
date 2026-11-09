@@ -16,3 +16,6 @@ dpf:
   cfssl: v1.6.5
   maintenance-operator: 0.3.0
   node-feature-discovery: 0.18.3
+opentelemetry-collector:
+  chart: 0.172.1
+  image: 0.159.0

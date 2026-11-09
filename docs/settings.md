@@ -35,6 +35,14 @@ Each cluster has a `nico/settings.yaml`. Anything else goes in `nico/overrides/<
 | `dpuClusterInterface` | `eth0` |
 | `dpuClusterVip` | a free address for the DPU cluster |
 
+## Site telemetry
+
+| Key | Example |
+|---|---|
+| `telemetryEndpoint` | `https://gateway.example.com:4318` |
+| `telemetrySite` | the site's cluster name in the Platform |
+| `telemetrySecret` | `site-relay-gateway` |
+
 ## Overrides you'll need
 
 - `nico.yaml` (site): the NICo site config. Start from the example. `dhcp_servers` takes IP addresses, not names.

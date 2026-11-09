@@ -15,6 +15,9 @@ data:
   vaultCertManagerAuthMount: kubernetes
   vaultCertManagerRole: cert-manager
   storageClass: ""
+  telemetryEndpoint: https://gateway.example.com:4318
+  telemetrySite: site-dpu-1
+  telemetrySecret: site-relay-gateway
   dpfApiServerVip: 10.0.0.10
   dpfApiServerPort: "6443"
   dpuClusterInterface: eth0

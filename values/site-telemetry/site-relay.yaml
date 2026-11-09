@@ -1,0 +1,176 @@
+fullnameOverride: site-relay
+mode: daemonset
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.159.0
+command:
+  name: otelcol-contrib
+presets:
+  hostMetrics:
+    enabled: true
+  kubeletMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+clusterRole:
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - services
+    - endpoints
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - discovery.k8s.io
+    resources:
+    - endpointslices
+    verbs:
+    - get
+    - list
+    - watch
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+extraVolumes:
+- name: gateway
+  secret:
+    secretName: ''
+- name: queue
+  hostPath:
+    path: /var/lib/site-relay
+    type: DirectoryOrCreate
+extraVolumeMounts:
+- name: gateway
+  mountPath: /etc/otel/gateway
+  readOnly: true
+- name: queue
+  mountPath: /var/lib/site-relay
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+config:
+  receivers:
+    otlp: null
+    jaeger: null
+    zipkin: null
+    prometheus: null
+    prometheus/site:
+      config:
+        scrape_configs:
+        - job_name: nico
+          scrape_interval: 30s
+          kubernetes_sd_configs:
+          - role: endpointslice
+            namespaces:
+              names:
+              - nico-system
+          relabel_configs:
+          - source_labels:
+            - __meta_kubernetes_service_name
+            regex: nico-.*-metrics|nico-hardware-health
+            action: keep
+          - source_labels:
+            - __meta_kubernetes_pod_node_name
+            regex: ${env:K8S_NODE_NAME}
+            action: keep
+          - source_labels:
+            - __meta_kubernetes_service_name
+            target_label: service
+        - job_name: cert-manager
+          scrape_interval: 30s
+          kubernetes_sd_configs:
+          - role: endpointslice
+            namespaces:
+              names:
+              - cert-manager
+          relabel_configs:
+          - source_labels:
+            - __meta_kubernetes_service_name
+            regex: cert-manager
+            action: keep
+          - source_labels:
+            - __meta_kubernetes_pod_node_name
+            regex: ${env:K8S_NODE_NAME}
+            action: keep
+          - source_labels:
+            - __meta_kubernetes_service_name
+            target_label: service
+  processors:
+    resource/site:
+      attributes:
+      - key: site
+        value: ''
+        action: upsert
+  exporters:
+    debug: null
+    otlp_http/gateway:
+      endpoint: ''
+      auth:
+        authenticator: bearertokenauth/gateway
+      headers:
+        X-Vcluster-Platform-Site: ''
+      tls:
+        ca_file: /etc/otel/gateway/ca.crt
+        reload_interval: 1h
+      sending_queue:
+        enabled: true
+        queue_size: 10000
+        storage: file_storage
+      retry_on_failure:
+        enabled: true
+        max_elapsed_time: 0s
+  extensions:
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+    bearertokenauth/gateway:
+      filename: /etc/otel/gateway/token
+    file_storage:
+      directory: /var/lib/site-relay
+      create_directory: true
+  service:
+    extensions:
+    - health_check
+    - file_storage
+    - bearertokenauth/gateway
+    pipelines:
+      traces: null
+      metrics:
+        receivers:
+        - prometheus/site
+        processors:
+        - memory_limiter
+        - resource/site
+        - batch
+        exporters:
+        - otlp_http/gateway
+      logs:
+        receivers: []
+        processors:
+        - memory_limiter
+        - resource/site
+        - batch
+        exporters:
+        - otlp_http/gateway

@@ -26,6 +26,7 @@ REPOS = {
     "mellanox": "oci://ghcr.io/mellanox",
     "nico": "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts",
     "hashicorp": "https://helm.releases.hashicorp.com",
+    "open-telemetry": "oci://ghcr.io/open-telemetry/opentelemetry-helm-charts",
 }
 
 NICO = V["nico"]["version"].lstrip("v")
@@ -96,12 +97,22 @@ COMPONENTS = {
              settings=[("siteId", "envConfig.CLUSTER_ID"), ("siteId", "envConfig.TEMPORAL_SUBSCRIBE_NAMESPACE"),
                        ("temporalHost", "envConfig.TEMPORAL_HOST")]),
     ],
+    "site-telemetry": [
+        dict(name="site-relay", repo=("open-telemetry", "opentelemetry-collector", V["opentelemetry-collector"]["chart"]),
+             ns="observability", defaults=True,
+             settings=[("telemetryEndpoint", "config.exporters.otlp_http/gateway.endpoint"),
+                       ("telemetrySite", "config.exporters.otlp_http/gateway.headers.X-Vcluster-Platform-Site"),
+                       ("telemetrySite", "config.processors.resource/site.attributes[0].value"),
+                       ("telemetrySecret", "extraVolumes[0].secret.secretName")]),
+    ],
 }
 
 SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
-                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["loft", "nico"]}
+                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["loft", "nico"],
+                 "site-telemetry": ["open-telemetry"]}
 SCOPE_TITLE = {"global": "global control plane", "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
-               "site-dpu": "NICo site DPU management layer", "site": "NICo site"}
+               "site-dpu": "NICo site DPU management layer", "site": "NICo site",
+               "site-telemetry": "NICo site telemetry relay"}
 
 
 def release(c):
@@ -260,6 +271,7 @@ pin("charts/temporal-namespaces/values.yaml", [(["adminToolsImage"], f"temporali
 pin("charts/kamaji-datastore/values.yaml", [(["kubectlImage"], f"alpine/k8s:{V['kubectl']}")])
 pin("charts/vault-unseal/values.yaml", [(["image"], f"alpine/k8s:{V['kubectl']}")])
 pin("values/site-vault/vault.yaml", [(["server", "image", "tag"], V["vault"]["image"])])
+pin("values/site-telemetry/site-relay.yaml", [(["image", "tag"], V["opentelemetry-collector"]["image"])])
 with open(f"{R}/test/e2e/vault-dev.yaml") as f:
     dev = re.sub(r"hashicorp/vault:\S+", f"hashicorp/vault:{V['vault']['image']}", f.read())
 with open(f"{R}/test/e2e/vault-dev.yaml", "w") as f:
