@@ -88,3 +88,33 @@ nico-api:
 
       [dpf.services.otel.extra_helm_values.transceiverExporter.image]
       repository = "ghcr.io/loft-sh/vcluster-platform-nico/transceiver-exporter"
+
+      [firmware_global]
+      autoupdate = false
+      instance_updates_manual_tagging = true
+
+      [host_models.lenovo-sr680a-v3]
+      vendor = "Lenovo"
+      model = "ThinkSystem SR680a V3"
+      explicit_start_needed = true
+      ordering = ["bmc", "uefi"]
+
+      [host_models.lenovo-sr680a-v3.components.bmc]
+      current_version_reported_as = "^BMC-Primary$"
+      preingest_upgrade_when_below = "11.30"
+      known_firmware = [{ version = "11.30", default = true, files = [{ url = "https://firmware.example.com/lnvgy_fw_xcc_r3x334f-11.30_anyos_comp.uxz", sha256 = "0000000000000000000000000000000000000000000000000000000000000000" }] }]
+
+      [host_models.lenovo-sr680a-v3.components.uefi]
+      current_version_reported_as = "^UEFI$"
+      preingest_upgrade_when_below = "3.40"
+      known_firmware = [{ version = "3.40", default = true, files = [{ url = "https://firmware.example.com/lnvgy_fw_uefi_r3e116d-3.40_anyos_comp.uxz", sha256 = "0000000000000000000000000000000000000000000000000000000000000000" }] }]
+
+      [dpu_config.dpu_models.bluefield3]
+      vendor = "Nvidia"
+      model = "BlueField-3 DPU"
+      ordering = ["bmc"]
+
+      [dpu_config.dpu_models.bluefield3.components.bmc]
+      current_version_reported_as = "^BMC_Firmware$"
+      preingest_upgrade_when_below = "BF-24.10-17"
+      known_firmware = [{ version = "BF-24.10-17", default = true, files = [{ url = "https://firmware.example.com/bf3-bmc-24.10-17_opn.fwpkg", sha256 = "0000000000000000000000000000000000000000000000000000000000000000" }] }]

@@ -88,4 +88,5 @@ check "dpf-config" helm template dpf-config "$ROOT/charts/dpf-config" -n dpf-ope
 check "nico with dpf" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$D/nico.yaml"
 
 for f in "$ROOT"/scripts/*.sh "$ROOT"/test/e2e/*.sh; do bash -n "$f" || { echo "FAIL  syntax $f"; fail=1; }; done
+python3 "$ROOT/scripts/check-firmware.py" >"$WORK/fw" || { echo "FAIL  firmware"; sed 's/^/      /' "$WORK/fw"; fail=1; }
 exit $fail
