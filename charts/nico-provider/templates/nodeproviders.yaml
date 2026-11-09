@@ -18,6 +18,10 @@ spec:
     identity:
       platformIssued:
         enabled: true
+    {{- with .netBox }}
+    netBox:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     {{- with .nodeTypes }}
     nodeTypes:
       {{- toYaml . | nindent 6 }}

@@ -38,3 +38,7 @@ Anyone who can read `vault-unseal-keys` can open Vault and every secret in it. B
 - Or unseal by hand after a full restart and keep the key offline.
 - Limit who can read Secrets in the `vault` namespace.
 - Vault listens without TLS inside the cluster. Add TLS.
+
+## Kubernetes auth
+
+NICo logs in to Vault with Kubernetes auth only on the mount `kubernetes`. Mount it there, or use the experimental build, which reads another mount from `VAULT_KUBERNETES_AUTH_MOUNT`. See [experimental.md](experimental.md).

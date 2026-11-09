@@ -2,4 +2,4 @@ apiVersion: v2
 name: nico-provider
 description: One vCluster Platform NICo NodeProvider per site, so tenants can claim that site's machines through the NICo REST API
 type: application
-version: 0.1.0
+version: 0.2.0
