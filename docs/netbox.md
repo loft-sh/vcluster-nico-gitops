@@ -69,7 +69,32 @@ Give the store a Vault role that can read only the BMC paths.
 
 ## One token per site
 
-Give each site its own NetBox token and connector, limited to that site's devices. The token must also read tags and module types, which NetBox does not scope to a site.
+Give each site its own NetBox token and connector, limited to that site's devices. The token must also read tags, module types and device types, which NetBox does not scope to a site.
+
+## BIOS profiles
+
+NetBox says what a server is for. The NodeProvider turns that into a NICo BIOS profile.
+
+1. In NetBox, add a Selection custom field `bios_profile` to Device type, and to Device for single servers. Its choices name a purpose, such as `gpu-training`.
+2. Map each purpose to a NICo BIOS profile in the site's `netBox` block:
+   ```yaml
+   netBox:
+     secretRef:
+       name: netbox
+       namespace: vcluster-platform
+     customFields:
+       biosProfile: bios_profile
+     biosProfiles:
+       gpu-training: gpu-training-profile
+       gpu-inference: gpu-inference-profile
+   ```
+
+- A device's own value wins over its device type's.
+- A value with no `biosProfiles` entry is used as the profile name.
+- The sync sets the `bios-profile` label on the expected machine when it registers the server, and on the NICo machine once NICo onboards it. A change in NetBox or in `biosProfiles` relabels both on the next pass.
+- A device with no value gets no label. A label set by hand stays until NetBox names a profile.
+- NICo applies the profile at onboarding. The name must be a profile in `named_bios_profiles`, see [Experimental](experimental.md).
+- `customFields.biosProfile` renames the field. The default is `bios_profile`.
 
 ## What the sync does
 

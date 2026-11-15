@@ -20,3 +20,7 @@ Two more changes have no upstream PR:
 - Two NICo Core migrations from earlier builds, for BIOS observations and stored BIOS profiles, kept without code so a site that applied them can still upgrade.
 
 A database change is one-way. A NICo REST column stays after a downgrade. A NICo Core migration stops any build that doesn't ship it from migrating the database.
+
+## Platform
+
+The NetBox BIOS profile mapping, `netBox.customFields.biosProfile` and `netBox.biosProfiles`, needs a Platform build that has it. The Platform in `versions.yaml` predates it. See [BIOS profiles](netbox.md#bios-profiles).
