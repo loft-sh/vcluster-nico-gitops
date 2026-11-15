@@ -35,7 +35,7 @@ components:
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico
-    targetRevision: 2.4.0-rc.11.vcluster.2
+    targetRevision: 2.4.0-rc.11.vcluster.3
   valueFiles:
   - $gitops/values/site/nico.yaml
   - $env/{path}/overrides/nico.yaml
@@ -59,7 +59,7 @@ components:
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico-rest-site-agent
-    targetRevision: 2.4.0-rc.11.vcluster.2
+    targetRevision: 2.4.0-rc.11.vcluster.3
   valueFiles:
   - $gitops/values/site/nico-site-agent.yaml
   - $env/{path}/overrides/nico-site-agent.yaml

@@ -1,5 +1,5 @@
 nico:
-  version: v2.4.0-rc.11.vcluster.2
+  version: v2.4.0-rc.11.vcluster.3
 vcluster-platform: 5.0.0-rc.1
 cert-manager: v1.20.2
 postgres: 14.5-alpine
