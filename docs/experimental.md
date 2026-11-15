@@ -1,6 +1,6 @@
 # Experimental
 
-The NICo build in `versions.yaml`, `v2.4.0-rc.11.vcluster.1`, is NICo `v2.4.0-rc.11` plus the upstream PRs below, before NVIDIA merges them.
+The NICo build in `versions.yaml`, `v2.4.0-rc.11.vcluster.2`, is NICo `v2.4.0-rc.11` plus the upstream PRs below, before NVIDIA merges them.
 
 | PR | Adds | Database change | Turn it on |
 |---|---|---|---|
@@ -22,4 +22,4 @@ One more change has no upstream PR yet:
 
 A database change is one-way. A NICo REST column stays after a downgrade. A NICo Core migration stops any build that doesn't ship it from migrating the database.
 
-Builds before `v2.4.0-rc.11.vcluster.1` shipped NICo Core migrations 20261026003843, 20261026040000 and 20261102120000. This build drops them. A site that applied them removes those rows from `_sqlx_migrations` before it upgrades.
+Our earlier builds on NICo `v2.4.0-rc.1` shipped NICo Core migrations 20261026003843, 20261026040000 and 20261102120000. This build drops them. A site that applied them removes those rows from `_sqlx_migrations` before it upgrades.

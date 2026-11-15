@@ -50,7 +50,7 @@ components:
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: temporal
-    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
+    targetRevision: 2.4.0-rc.11.vcluster.2
   valueFiles:
   - values.yaml
   - values-kind.yaml
@@ -74,7 +74,7 @@ components:
   source:
     repoURL: ghcr.io/loft-sh/vcluster-platform-nico/charts
     chart: nico-rest
-    targetRevision: 2.4.0-vcluster.rc5.1.g3d8bdad7
+    targetRevision: 2.4.0-rc.11.vcluster.2
   valueFiles:
   - $gitops/values/global/nico-rest.yaml
   - $env/{path}/overrides/nico-rest.yaml

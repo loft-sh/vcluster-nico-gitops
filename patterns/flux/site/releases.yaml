@@ -48,7 +48,7 @@ spec:
   chart:
     spec:
       chart: nico
-      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
+      version: 2.4.0-rc.11.vcluster.2
       sourceRef:
         kind: HelmRepository
         name: nico
@@ -97,7 +97,7 @@ spec:
   chart:
     spec:
       chart: nico-rest-site-agent
-      version: 2.4.0-vcluster.rc5.1.g3d8bdad7
+      version: 2.4.0-rc.11.vcluster.2
       sourceRef:
         kind: HelmRepository
         name: nico
