@@ -10,6 +10,9 @@ nico-api:
       attestation_enabled = false
       maintenance_end_bios_reapply_enabled = false
 
+      [machine_state_controller]
+      full_lockdown_recovery_enabled = false
+
       [pools.lo-ip]
       type = "ipv4"
       ranges = [{ start = "10.0.0.0", end = "10.0.1.0" }]
@@ -32,30 +35,30 @@ nico-api:
       [dpf.services.dpu_agent]
       helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
       helm_chart = "nico-dpu-agent"
-      helm_version = "2.4.0-rc.11.vcluster.3"
+      helm_version = "2.4.0-rc.11.vcluster.4"
       docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/forge-dpu-agent"
-      docker_image_tag = "v2.4.0-rc.11.vcluster.3"
+      docker_image_tag = "v2.4.0-rc.11.vcluster.4"
 
       [dpf.services.dhcp_server]
       helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
       helm_chart = "nico-dhcp-server"
-      helm_version = "2.4.0-rc.11.vcluster.3"
+      helm_version = "2.4.0-rc.11.vcluster.4"
       docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/forge-dhcp-server"
-      docker_image_tag = "v2.4.0-rc.11.vcluster.3"
+      docker_image_tag = "v2.4.0-rc.11.vcluster.4"
 
       [dpf.services.fmds]
       helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
       helm_chart = "nico-fmds"
-      helm_version = "2.4.0-rc.11.vcluster.3"
+      helm_version = "2.4.0-rc.11.vcluster.4"
       docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/carbide-fmds"
-      docker_image_tag = "v2.4.0-rc.11.vcluster.3"
+      docker_image_tag = "v2.4.0-rc.11.vcluster.4"
 
       [dpf.services.otel]
       helm_repo_url = "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts"
       helm_chart = "nico-otelcol"
-      helm_version = "2.4.0-rc.11.vcluster.3"
+      helm_version = "2.4.0-rc.11.vcluster.4"
       docker_repo_url = "ghcr.io/loft-sh/vcluster-platform-nico/otelcol-contrib"
-      docker_image_tag = "v2.4.0-rc.11.vcluster.3"
+      docker_image_tag = "v2.4.0-rc.11.vcluster.4"
 
       [dpf.services.otel.extra_helm_values.transceiverExporter.image]
       repository = "ghcr.io/loft-sh/vcluster-platform-nico/transceiver-exporter"

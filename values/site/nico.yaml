@@ -1,7 +1,7 @@
 global:
   image:
     repository: ghcr.io/loft-sh/vcluster-platform-nico/nico
-    tag: v2.4.0-rc.11.vcluster.3
+    tag: v2.4.0-rc.11.vcluster.4
   imagePullSecrets: []
   certificate:
     issuerRef:
@@ -38,14 +38,14 @@ nico-pxe:
   bootArtifactContainers:
   - name: boot-artifacts-x86-64
     repository: ghcr.io/loft-sh/vcluster-platform-nico/boot-artifacts-x86_64
-    tag: v2.4.0-rc.11.vcluster.3
+    tag: v2.4.0-rc.11.vcluster.4
     command:
     - sh
     - -c
     - set -e; cp -r /x86_64 /forge-boot-artifacts/blobs/internal
   - name: boot-artifacts-aarch64
     repository: ghcr.io/loft-sh/vcluster-platform-nico/boot-artifacts-aarch64
-    tag: v2.4.0-rc.11.vcluster.3
+    tag: v2.4.0-rc.11.vcluster.4
     command:
     - sh
     - -c

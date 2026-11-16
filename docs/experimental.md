@@ -1,6 +1,6 @@
 # Experimental
 
-The NICo build in `versions.yaml`, `v2.4.0-rc.11.vcluster.3`, is NICo `v2.4.0-rc.11` plus the upstream PRs below, before NVIDIA merges them.
+The NICo build in `versions.yaml`, `v2.4.0-rc.11.vcluster.4`, is NICo `v2.4.0-rc.11` plus the upstream PRs below, before NVIDIA merges them.
 
 | PR | Adds | Database change | Turn it on |
 |---|---|---|---|
@@ -19,7 +19,7 @@ The NICo build in `versions.yaml`, `v2.4.0-rc.11.vcluster.3`, is NICo `v2.4.0-rc
 These changes have no upstream PR yet:
 
 - `maintenance_end_bios_reapply_enabled = true` in `nico.yaml` writes a host's BIOS profile again when its maintenance ends, restarts the host once and checks the result before it can be allocated. It runs on a `Ready` host without an instance; a host with an instance keeps its BIOS. A `bios-reapply` health alert keeps the host from being allocated until the BIOS write is issued. Each maintenance exit writes the BIOS once. Off by default. It includes the #8963 check.
-- A `Ready` host that starts boot configuration without full lockdown gets its BMC lockdown restored the way an assigned host does, so it returns to `Ready`. A host that starts fully locked down keeps the full-lockdown check. Always on.
+- `full_lockdown_recovery_enabled = true` under `[machine_state_controller]` in `nico.yaml` also covers Lenovo XCC ThinkSystem SR680a V3. When a `Ready` host still has partial lockdown at the end of boot configuration, NICo applies the full lockdown, restarts the host and checks it before the host returns to `Ready`. Off by default. When off, such a host stays unavailable until a person locks it.
 - A host firmware run that finds no firmware config for the host locks the host down again before it returns. Always on.
 
 A database change is one-way. A NICo REST column stays after a downgrade. A NICo Core migration stops any build that doesn't ship it from migrating the database.
