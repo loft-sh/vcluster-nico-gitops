@@ -20,3 +20,7 @@ config:
   loftHost: platform.example.com
   audit:
     enabled: true
+imageRef:
+  registry: ghcr.io
+  repository: loft-sh/vcluster-platform-experimental
+  tag: 5.0.0-rc.1-next.exp.8

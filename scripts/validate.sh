@@ -63,8 +63,10 @@ check "temporal-namespaces" helm template temporal-namespaces "$ROOT/charts/temp
 check "nico-rest" helm template nico-rest "$NICO_CHARTS/nico-rest" -n nico-rest -f "$ROOT/values/global/nico-rest.yaml" \
   --set "nico-rest-api.config.issuers[0].issuer=$(settings global platformOidcIssuer)" \
   --set "nico-rest-site-manager.certificate.dnsNames[5]=$(settings global siteManagerHost)"
-check "vcluster-platform" helm template vcluster-platform loft/vcluster-platform --version "$(ver vcluster-platform)" -n vcluster-platform \
+check "vcluster-platform" helm template vcluster-platform loft/vcluster-platform --version "$(ver vcluster-platform chart)" -n vcluster-platform \
   -f "$ROOT/values/global/vcluster-platform.yaml" --set "config.loftHost=$(settings global platformHost)"
+check "vcluster-platform-agent" helm template vcluster-platform loft/vcluster-platform --version "$(ver vcluster-platform chart)" -n vcluster-platform \
+  -f "$ROOT/values/site/vcluster-platform-agent.yaml"
 check "nico-provider" helm template nico-provider "$ROOT/charts/nico-provider" -f "$G/nico-provider.yaml" --set "sites[0].siteId=$SITE_ID"
 check "site-prereqs" helm template site-prereqs "$ROOT/charts/site-prereqs" -n nico-system --set "vault.address=$(settings site-1 vaultAddr)"
 check "nico" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$S/nico.yaml"

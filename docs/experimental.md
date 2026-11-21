@@ -35,3 +35,7 @@ These changes have no upstream PR yet:
 A database change is one-way. A NICo REST column stays after a downgrade. A NICo Core migration stops any build that doesn't ship it from migrating the database.
 
 Our earlier builds on NICo `v2.4.0-rc.1` shipped NICo Core migrations 20261026003843, 20261026040000 and 20261102120000. This build drops them. A site that applied them removes those rows from `_sqlx_migrations` before it upgrades.
+
+## vCluster Platform
+
+The global Platform and each site's agent run `ghcr.io/loft-sh/vcluster-platform-experimental:5.0.0-rc.1-next.exp.8` on the stock `5.0.0-rc.1` chart. Both are in `versions.yaml`. For the stock build, set `image` to `ghcr.io/loft-sh/vcluster-platform:5.0.0-rc.1` and run the generator.

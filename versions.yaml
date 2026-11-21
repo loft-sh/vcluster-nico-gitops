@@ -1,6 +1,8 @@
 nico:
   version: v2.4.0-rc.11.vcluster.5
-vcluster-platform: 5.0.0-rc.1
+vcluster-platform:
+  chart: 5.0.0-rc.1
+  image: ghcr.io/loft-sh/vcluster-platform-experimental:5.0.0-rc.1-next.exp.8
 cert-manager: v1.20.2
 postgres: 14.5-alpine
 temporal-admin-tools: 1.26.2

@@ -45,7 +45,7 @@ COMPONENTS = {
         dict(name="nico-rest", repo=("nico", "nico-rest", NICO), ns="nico-rest", deps=["temporal-namespaces"], defaults=True,
              settings=[("platformOidcIssuer", "nico-rest-api.config.issuers[0].issuer"),
                        ("siteManagerHost", "nico-rest-site-manager.certificate.dnsNames[5]")]),
-        dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
+        dict(name="vcluster-platform", repo=("loft", "vcluster-platform", V["vcluster-platform"]["chart"]), ns="vcluster-platform",
              deps=["cert-manager"], defaults=True, serverSideDiff=False,
              argoIgnore=[{"kind": "Service", "jqPathExpressions": [".spec.ports[].nodePort",
                                                                    '.metadata.annotations["metallb.io/ip-allocated-from-pool"]']},
@@ -85,7 +85,7 @@ COMPONENTS = {
                        ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
     ],
     "site": [
-        dict(name="vcluster-platform-agent", repo=("loft", "vcluster-platform", V["vcluster-platform"]), ns="vcluster-platform",
+        dict(name="vcluster-platform-agent", repo=("loft", "vcluster-platform", V["vcluster-platform"]["chart"]), ns="vcluster-platform",
              wave_with="nico-site-agent", defaults=True, disableWait=True),
         dict(name="nico", repo=("nico", "nico", NICO), ns="nico-system", deps=["site-prereqs"], defaults=True, timeout="20m",
              settings=[("vaultAddr", "nico-api.vaultClusterInfo.VAULT_SERVICE"),
@@ -263,6 +263,11 @@ pin("values/site/nico-site-agent.yaml", [(["global", "image", "tag"], IMAGES)])
 site = yaml.safe_load(open(f"{R}/values/site/nico.yaml"))
 pin("values/site/nico.yaml", [(["global", "image", "tag"], IMAGES)] +
     [(["nico-pxe", "bootArtifactContainers", i, "tag"], IMAGES) for i in range(len(site["nico-pxe"]["bootArtifactContainers"]))])
+PLATFORM_IMAGE, PLATFORM_TAG = V["vcluster-platform"]["image"].rsplit(":", 1)
+PLATFORM_REGISTRY, PLATFORM_REPOSITORY = PLATFORM_IMAGE.split("/", 1)
+PLATFORM_IMAGE_REF = {"registry": PLATFORM_REGISTRY, "repository": PLATFORM_REPOSITORY, "tag": PLATFORM_TAG}
+pin("values/global/vcluster-platform.yaml", [(["imageRef"], PLATFORM_IMAGE_REF)])
+pin("values/site/vcluster-platform-agent.yaml", [(["imageRef"], PLATFORM_IMAGE_REF)])
 pin("values/site-dpu/dpf-operator.yaml", [(["controllerManager", "image", "tag"], V["dpf"]["operator"])])
 pin("values/site-dpu/kamaji.yaml", [(["image", "tag"], V["dpf"]["kamaji-image"]), (["cfssl", "image", "tag"], V["dpf"]["cfssl"])])
 pin("charts/global-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
