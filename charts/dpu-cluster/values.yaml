@@ -1,0 +1,9 @@
+project: default
+owner: admin
+namespace: dpu-cluster
+chartVersion: 0.38.0
+kubernetesVersion: v1.34.13
+serviceCIDR: 10.96.0.0/16
+podCIDR: 10.244.0.0/14
+kubeconfigSecret: dpu-cluster-admin
+sites: []

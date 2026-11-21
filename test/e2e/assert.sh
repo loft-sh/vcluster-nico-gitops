@@ -41,12 +41,14 @@ if [ "$ENV" = site-vault ]; then
 fi
 
 if [ "$ENV" = site-dpu ]; then
-  for app in argo-cd kamaji kamaji-datastore maintenance-operator node-feature-discovery dpf-operator dpf-config; do released "$app"; done
-  check "Kamaji controller available" kubectl -n dpf-operator-system wait deploy/kamaji --for=condition=Available --timeout=300s
-  has "Kamaji DataStore webhook back to Fail" "Fail" kubectl get validatingwebhookconfiguration kamaji-validating-webhook-configuration \
-    -o jsonpath='{.webhooks[?(@.name=="vdatastore.kb.io")].failurePolicy}'
+  for app in argo-cd maintenance-operator node-feature-discovery dpf-operator dpf-config dpu-cluster-kubeconfig; do released "$app"; done
   check "DPF operator available" kubectl -n dpf-operator-system wait deploy/dpf-operator-controller-manager --for=condition=Available --timeout=300s
-  check "DPUCluster Ready" kubectl -n dpf-operator-system wait dpucluster/carbide-dpf-cluster --for=condition=Ready --timeout=900s
+  has "DPUCluster is static on the DPU cluster kubeconfig" "^static carbide-dpf-cluster-vcluster-admin$" \
+    kubectl -n dpf-operator-system get dpucluster/carbide-dpf-cluster -o jsonpath='{.spec.type} {.spec.kubeconfig}{"\n"}'
+  check "ESO copied the DPU cluster kubeconfig" \
+    kubectl -n dpf-operator-system wait externalsecret/carbide-dpf-cluster-vcluster-admin --for=condition=Ready --timeout=300s
+  has "the copy has the key DPF reads" "super-admin.conf" \
+    kubectl -n dpf-operator-system get secret carbide-dpf-cluster-vcluster-admin -o jsonpath='{.data}'
   has "NICo created its DPUDeployment" "nico-deployment-v2" kubectl -n dpf-operator-system get dpudeployments.svc.dpu.nvidia.com -o name
   has "NICo created a DPUFlavor" "dpuflavor" kubectl -n dpf-operator-system get dpuflavors.provisioning.dpu.nvidia.com -o name
   has "NICo created a BFB" "bfb" kubectl -n dpf-operator-system get bfbs.provisioning.dpu.nvidia.com -o name

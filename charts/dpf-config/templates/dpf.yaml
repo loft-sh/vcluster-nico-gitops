@@ -1,5 +1,5 @@
 {{- if not .Values.apiServer.vip }}{{ fail "apiServer.vip: the Kubernetes API address the DPUs reach (setting dpfApiServerVip)" }}{{ end }}
-{{- $k := .Values.dpuCluster.keepalived }}
+{{- if not .Values.dpuCluster.maxNodes }}{{ fail "dpuCluster.maxNodes: the most DPUs the DPU cluster takes (setting dpuClusterMaxNodes)" }}{{ end }}
 apiVersion: operator.dpu.nvidia.com/v1alpha1
 kind: DPFOperatorConfig
 metadata:
@@ -18,6 +18,8 @@ spec:
     kubernetesAPIServerPort: {{ .Values.apiServer.port }}
     argoCDNamespace: {{ .Values.namespace }}
   kamajiClusterManager:
+    disable: true
+  staticClusterManager:
     disable: false
   networking:
     highSpeedMTU: {{ .Values.highSpeedMTU }}
@@ -28,16 +30,6 @@ metadata:
   name: {{ .Values.dpuCluster.name }}
   namespace: {{ .Values.namespace }}
 spec:
-  type: kamaji
+  type: static
   maxNodes: {{ .Values.dpuCluster.maxNodes }}
-  {{- if $k.vip }}
-  clusterEndpoint:
-    keepalived:
-      interface: {{ $k.interface | quote }}
-      vip: {{ $k.vip | quote }}
-      virtualRouterID: {{ $k.virtualRouterID }}
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: {{ $k.controlPlaneLabelValue | quote }}
-  {{- else }}
-  clusterEndpoint: {}
-  {{- end }}
+  kubeconfig: {{ .Values.dpuCluster.kubeconfig }}

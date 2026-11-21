@@ -10,16 +10,6 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: nvidia-charts
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: oci://ghcr.io/nvidia/charts
-  type: oci
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
   name: mellanox
   namespace: flux-system
 spec:

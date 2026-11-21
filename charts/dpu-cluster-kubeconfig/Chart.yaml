@@ -1,0 +1,5 @@
+apiVersion: v2
+name: dpu-cluster-kubeconfig
+description: Copies the DPU cluster's admin kubeconfig into dpf-operator-system as the super-admin.conf key that DPF reads
+type: application
+version: 0.1.0

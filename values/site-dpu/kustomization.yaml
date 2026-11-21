@@ -9,9 +9,6 @@ configMapGenerator:
 - name: gitops-defaults-argo-cd
   files:
   - values.yaml=argo-cd.yaml
-- name: gitops-defaults-kamaji
-  files:
-  - values.yaml=kamaji.yaml
 - name: gitops-defaults-maintenance-operator
   files:
   - values.yaml=maintenance-operator.yaml

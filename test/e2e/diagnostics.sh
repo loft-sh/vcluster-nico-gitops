@@ -11,3 +11,4 @@ for ns in nico-system nico-rest cert-manager vault dpf-operator-system; do
 done
 kubectl -n nico-system logs deploy/nico-api --tail=200
 kubectl get dpfoperatorconfig,dpucluster -A -o yaml 2>/dev/null | tail -80
+kubectl -n dpf-operator-system get secretstore,externalsecret -o yaml 2>/dev/null | tail -60

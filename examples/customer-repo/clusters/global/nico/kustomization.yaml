@@ -9,6 +9,9 @@ generatorOptions:
   labels:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
+- name: gitops-overrides-dpu-cluster
+  files:
+  - values.yaml=overrides/dpu-cluster.yaml
 - name: gitops-overrides-global-prereqs
   files:
   - values.yaml=overrides/global-prereqs.yaml

@@ -67,6 +67,15 @@ check "vcluster-platform" helm template vcluster-platform loft/vcluster-platform
   -f "$ROOT/values/global/vcluster-platform.yaml" --set "config.loftHost=$(settings global platformHost)"
 check "vcluster-platform-agent" helm template vcluster-platform loft/vcluster-platform --version "$(ver vcluster-platform chart)" -n vcluster-platform \
   -f "$ROOT/values/site/vcluster-platform-agent.yaml"
+check "dpu-cluster" helm template dpu-cluster "$ROOT/charts/dpu-cluster" -f "$G/dpu-cluster.yaml"
+dpu_cluster_vcluster() {
+  helm template dpu-cluster "$ROOT/charts/dpu-cluster" -f "$G/dpu-cluster.yaml" | python3 -c 'import sys, yaml
+vci = [d for d in yaml.safe_load_all(sys.stdin) if d and d["kind"] == "VirtualClusterInstance"][0]["spec"]["template"]
+assert [o["kind"] for o in yaml.safe_load_all(vci["spaceTemplate"]["objects"])] == ["Role", "RoleBinding"]
+print(vci["helmRelease"]["values"])' >"$WORK/dpu-cluster-values.yaml"
+  helm template dpu-cluster loft/vcluster --version "$(ver dpu-cluster vcluster)" -n dpu-cluster -f "$WORK/dpu-cluster-values.yaml"
+}
+check "dpu-cluster vcluster" dpu_cluster_vcluster
 check "nico-provider" helm template nico-provider "$ROOT/charts/nico-provider" -f "$G/nico-provider.yaml" --set "sites[0].siteId=$SITE_ID"
 check "site-prereqs" helm template site-prereqs "$ROOT/charts/site-prereqs" -n nico-system --set "vault.address=$(settings site-1 vaultAddr)"
 check "nico" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$S/nico.yaml"
@@ -81,9 +90,6 @@ check "site-relay" helm template site-relay oci://ghcr.io/open-telemetry/opentel
 
 D=$EXAMPLE/site-dpu-1/nico/overrides
 check "argo-cd" helm template argo-cd argo/argo-cd --version "$(ver dpf argo-cd)" -n dpf-operator-system -f "$ROOT/values/site-dpu/argo-cd.yaml"
-check "kamaji" helm template kamaji oci://ghcr.io/nvidia/charts/kamaji --version "$(ver dpf kamaji)" -n dpf-operator-system \
-  -f "$ROOT/values/site-dpu/kamaji.yaml" -f "$D/kamaji.yaml"
-check "kamaji-datastore" helm template kamaji-datastore "$ROOT/charts/kamaji-datastore" -n dpf-operator-system
 check "maintenance-operator" helm template maintenance-operator oci://ghcr.io/mellanox/maintenance-operator-chart --version "$(ver dpf maintenance-operator)" \
   -n dpf-operator-system -f "$ROOT/values/site-dpu/maintenance-operator.yaml"
 check "node-feature-discovery" helm template node-feature-discovery nfd/node-feature-discovery --version "$(ver dpf node-feature-discovery)" \
@@ -91,8 +97,8 @@ check "node-feature-discovery" helm template node-feature-discovery nfd/node-fea
 check "dpf-operator" helm template dpf-operator doca/dpf-operator --version "$(ver dpf operator)" -n dpf-operator-system \
   -f "$ROOT/values/site-dpu/dpf-operator.yaml"
 check "dpf-config" helm template dpf-config "$ROOT/charts/dpf-config" -n dpf-operator-system \
-  --set "apiServer.vip=$(settings site-dpu-1 dpfApiServerVip)" --set "dpuCluster.keepalived.interface=$(settings site-dpu-1 dpuClusterInterface)" \
-  --set "dpuCluster.keepalived.vip=$(settings site-dpu-1 dpuClusterVip)"
+  --set "apiServer.vip=$(settings site-dpu-1 dpfApiServerVip)" --set-string "dpuCluster.maxNodes=$(settings site-dpu-1 dpuClusterMaxNodes)"
+check "dpu-cluster-kubeconfig" helm template dpu-cluster-kubeconfig "$ROOT/charts/dpu-cluster-kubeconfig" -n dpf-operator-system
 check "nico with dpf" helm template nico "$NICO_CHARTS/nico" -n nico-system -f "$ROOT/values/site/nico.yaml" -f "$D/nico.yaml"
 
 for f in "$ROOT"/scripts/*.sh "$ROOT"/test/e2e/*.sh; do bash -n "$f" || { echo "FAIL  syntax $f"; fail=1; }; done

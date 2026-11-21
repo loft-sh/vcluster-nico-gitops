@@ -16,6 +16,7 @@ TOKEN=$("$ROOT/test/e2e/vault-setup.sh")
 FLAGS=()
 [ "$ENV" = site-dpu ] && FLAGS=(--dpu)
 NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX" "${FLAGS[@]}"
+[ "$ENV" = site-dpu ] && "$ROOT/test/e2e/dpu-cluster-standin.sh" "$CTX"
 
 API_VIP=$(kubectl get endpoints kubernetes -n default -o jsonpath='{.subsets[0].addresses[0].ip}')
 DATA="{dpfApiServerVip: \"$API_VIP\"}"
@@ -28,7 +29,7 @@ argocd_synced "$CTX" site-prereqs 1200
 if [ "$ENV" = site-dpu ]; then
   argocd_root "$CTX" site-dpu "$ENV_PATH" "$DATA"
   echo "waiting for the site-dpu layer"
-  for app in argo-cd kamaji kamaji-datastore maintenance-operator node-feature-discovery dpf-operator dpf-config; do
+  for app in argo-cd maintenance-operator node-feature-discovery dpf-operator dpf-config dpu-cluster-kubeconfig; do
     argocd_synced "$CTX" "$app" 2700
   done
 fi

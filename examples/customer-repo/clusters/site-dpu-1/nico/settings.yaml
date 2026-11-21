@@ -20,5 +20,4 @@ data:
   telemetrySecret: site-relay-gateway
   dpfApiServerVip: 10.0.0.10
   dpfApiServerPort: "6443"
-  dpuClusterInterface: eth0
-  dpuClusterVip: 10.0.0.20
+  dpuClusterMaxNodes: "1000"

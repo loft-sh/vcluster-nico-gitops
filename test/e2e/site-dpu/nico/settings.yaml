@@ -17,5 +17,4 @@ data:
   storageClass: standard
   dpfApiServerVip: API_VIP
   dpfApiServerPort: "6443"
-  dpuClusterInterface: eth0
-  dpuClusterVip: 172.18.0.250
+  dpuClusterMaxNodes: "1000"

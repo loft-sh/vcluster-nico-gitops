@@ -1,5 +1,5 @@
 apiVersion: v2
 name: dpf-config
-description: The DPFOperatorConfig and the Kamaji-backed DPUCluster that NICo Core manages DPUs through
+description: The DPFOperatorConfig and the static DPUCluster on the site's DPU vCluster, which NICo Core manages DPUs through
 type: application
-version: 0.1.0
+version: 0.2.0

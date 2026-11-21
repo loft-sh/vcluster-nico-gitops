@@ -1,0 +1,7 @@
+namespace: dpf-operator-system
+serviceAccount: eso-dpu-cluster
+source:
+  namespace: dpu-cluster
+  secret: dpu-cluster-admin
+target: carbide-dpf-cluster-vcluster-admin
+refreshInterval: 5m

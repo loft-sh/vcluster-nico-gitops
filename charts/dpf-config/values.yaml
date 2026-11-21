@@ -7,11 +7,7 @@ highSpeedMTU: 9000
 dpuCluster:
   name: carbide-dpf-cluster
   maxNodes: 1000
-  keepalived:
-    interface: ""
-    vip: ""
-    virtualRouterID: 126
-    controlPlaneLabelValue: ""
+  kubeconfig: carbide-dpf-cluster-vcluster-admin
 nicoApiKubeconfig:
   enabled: true
   namespace: nico-system

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: dpu-cluster
+description: One DPU cluster per DPU site, a vCluster with private nodes that DPF uses as its DPUCluster
+type: application
+version: 0.1.0

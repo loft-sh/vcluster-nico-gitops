@@ -13,11 +13,11 @@ vault:
 dpf:
   operator: v26.4.0
   argo-cd: 9.4.1
-  kamaji: 1.2.0
-  kamaji-image: v1.34.0-25.9.3
-  cfssl: v1.6.5
   maintenance-operator: 0.3.0
   node-feature-discovery: 0.18.3
+dpu-cluster:
+  vcluster: 0.38.0
+  kubernetes: v1.34.13
 opentelemetry-collector:
   chart: 0.172.1
   image: 0.159.0

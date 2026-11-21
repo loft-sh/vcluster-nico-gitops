@@ -36,79 +36,6 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: kamaji
-  namespace: flux-system
-spec:
-  interval: 10m
-  releaseName: kamaji
-  targetNamespace: dpf-operator-system
-  storageNamespace: dpf-operator-system
-  chart:
-    spec:
-      chart: kamaji
-      version: 1.2.0
-      sourceRef:
-        kind: HelmRepository
-        name: nvidia-charts
-  install:
-    createNamespace: true
-    timeout: 15m
-    remediation:
-      retries: 3
-    disableWait: true
-  upgrade:
-    timeout: 15m
-    remediation:
-      retries: 3
-    disableWait: true
-  dependsOn:
-  - name: cert-manager
-  valuesFrom:
-  - kind: ConfigMap
-    name: gitops-defaults-kamaji
-    valuesKey: values.yaml
-  - kind: ConfigMap
-    name: gitops-overrides-kamaji
-    valuesKey: values.yaml
-    optional: true
----
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
-  name: kamaji-datastore
-  namespace: flux-system
-spec:
-  interval: 10m
-  releaseName: kamaji-datastore
-  targetNamespace: dpf-operator-system
-  storageNamespace: dpf-operator-system
-  chart:
-    spec:
-      chart: ./charts/kamaji-datastore
-      reconcileStrategy: Revision
-      sourceRef:
-        kind: GitRepository
-        name: vcluster-nico-gitops
-  install:
-    createNamespace: true
-    timeout: 15m
-    remediation:
-      retries: 3
-  upgrade:
-    timeout: 15m
-    remediation:
-      retries: 3
-  dependsOn:
-  - name: kamaji
-  valuesFrom:
-  - kind: ConfigMap
-    name: gitops-overrides-kamaji-datastore
-    valuesKey: values.yaml
-    optional: true
----
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
   name: maintenance-operator
   namespace: flux-system
 spec:
@@ -206,7 +133,6 @@ spec:
       retries: 3
   dependsOn:
   - name: argo-cd
-  - name: kamaji-datastore
   - name: maintenance-operator
   - name: node-feature-discovery
   valuesFrom:
@@ -257,13 +183,43 @@ spec:
     targetPath: apiServer.port
   - kind: ConfigMap
     name: gitops-settings
-    valuesKey: dpuClusterInterface
-    targetPath: dpuCluster.keepalived.interface
-  - kind: ConfigMap
-    name: gitops-settings
-    valuesKey: dpuClusterVip
-    targetPath: dpuCluster.keepalived.vip
+    valuesKey: dpuClusterMaxNodes
+    targetPath: dpuCluster.maxNodes
   - kind: ConfigMap
     name: gitops-overrides-dpf-config
+    valuesKey: values.yaml
+    optional: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dpu-cluster-kubeconfig
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: dpu-cluster-kubeconfig
+  targetNamespace: dpf-operator-system
+  storageNamespace: dpf-operator-system
+  chart:
+    spec:
+      chart: ./charts/dpu-cluster-kubeconfig
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: vcluster-nico-gitops
+  install:
+    createNamespace: true
+    timeout: 15m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 15m
+    remediation:
+      retries: 3
+  dependsOn:
+  - name: dpf-config
+  valuesFrom:
+  - kind: ConfigMap
+    name: gitops-overrides-dpu-cluster-kubeconfig
     valuesKey: values.yaml
     optional: true

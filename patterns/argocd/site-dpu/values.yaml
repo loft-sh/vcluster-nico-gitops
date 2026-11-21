@@ -13,7 +13,6 @@ destination:
 namePrefix: ''
 data: {}
 ociRepositories:
-- ghcr.io/nvidia/charts
 - ghcr.io/mellanox
 components:
 - name: argo-cd
@@ -28,28 +27,6 @@ components:
   valueFiles:
   - $gitops/values/site-dpu/argo-cd.yaml
   - $env/{path}/overrides/argo-cd.yaml
-- name: kamaji
-  releaseName: kamaji
-  namespace: dpf-operator-system
-  wave: 0
-  serverSideDiff: true
-  source:
-    repoURL: ghcr.io/nvidia/charts
-    chart: kamaji
-    targetRevision: 1.2.0
-  valueFiles:
-  - $gitops/values/site-dpu/kamaji.yaml
-  - $env/{path}/overrides/kamaji.yaml
-- name: kamaji-datastore
-  releaseName: kamaji-datastore
-  namespace: dpf-operator-system
-  wave: 0
-  serverSideDiff: true
-  source:
-    gitops: true
-    path: charts/kamaji-datastore
-  valueFiles:
-  - $env/{path}/overrides/kamaji-datastore.yaml
 - name: maintenance-operator
   releaseName: maintenance-operator
   namespace: dpf-operator-system
@@ -101,7 +78,15 @@ components:
     path: apiServer.vip
   - key: dpfApiServerPort
     path: apiServer.port
-  - key: dpuClusterInterface
-    path: dpuCluster.keepalived.interface
-  - key: dpuClusterVip
-    path: dpuCluster.keepalived.vip
+  - key: dpuClusterMaxNodes
+    path: dpuCluster.maxNodes
+- name: dpu-cluster-kubeconfig
+  releaseName: dpu-cluster-kubeconfig
+  namespace: dpf-operator-system
+  wave: 3
+  serverSideDiff: true
+  source:
+    gitops: true
+    path: charts/dpu-cluster-kubeconfig
+  valueFiles:
+  - $env/{path}/overrides/dpu-cluster-kubeconfig.yaml

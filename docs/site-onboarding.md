@@ -17,7 +17,8 @@
    scripts/connect-site.sh --global-context <global> --site-context <site> --name <site>
    ```
 5. Add the site to the global `nico-provider.yaml` override, with its node types. Instance type IDs come from `GET /v2/org/<org>/nico/instance/type?siteId=<id>`.
-6. Optional: register its machines from NetBox. See [netbox.md](netbox.md).
+6. For a DPU site, add it to the global `dpu-cluster.yaml` override. See [dpu-management.md](dpu-management.md).
+7. Optional: register its machines from NetBox. See [netbox.md](netbox.md).
 
 Don't add a second issuer for the provider org in `nico-rest.yaml`. That reserves the org name and the Platform can no longer use it.
 

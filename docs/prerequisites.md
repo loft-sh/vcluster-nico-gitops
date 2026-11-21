@@ -34,6 +34,11 @@ Sites need outbound 443, 8100 and 7233 to these.
 
    Give it a long lifetime. Vault's default is 32 days.
 
+## DPU sites
+
+- MetalLB, with a pool for the DPU cluster endpoint. DPUs reach it on port 443.
+- External Secrets Operator, with the `external-secrets.io/v1` API.
+
 ## Argo CD
 
 The layers order their Applications with sync waves. Argo CD only waits for an Application to be healthy if it checks Application health, so add this to `argocd-cm`. Without it, a layer can sync before cert-manager is ready and stall.

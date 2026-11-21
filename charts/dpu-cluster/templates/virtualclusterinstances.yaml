@@ -1,0 +1,107 @@
+{{- range .Values.sites }}
+{{- if not .cluster }}{{ fail "sites[].cluster: the site's cluster name in the Platform" }}{{ end }}
+{{- if not .endpoint }}{{ fail (printf "sites[%s].endpoint: the DPU cluster API address" .cluster) }}{{ end }}
+{{- if not .addressPool }}{{ fail (printf "sites[%s].addressPool: the MetalLB pool that holds the endpoint" .cluster) }}{{ end }}
+---
+apiVersion: management.loft.sh/v1
+kind: VirtualClusterInstance
+metadata:
+  name: dpu-cluster-{{ .cluster }}
+  namespace: p-{{ $.Values.project }}
+spec:
+  displayName: DPU cluster {{ .cluster }}
+  description: DPF DPU cluster. BlueField DPUs join it as private nodes.
+  owner:
+    user: {{ $.Values.owner }}
+  clusterRef:
+    cluster: {{ .cluster }}
+    namespace: {{ $.Values.namespace }}
+  template:
+    pro:
+      enabled: true
+    spaceTemplate:
+      objects: |
+        {{- $.Files.Get "files/kubeconfig-reader.yaml" | nindent 8 }}
+    helmRelease:
+      chart:
+        version: {{ $.Values.chartVersion }}
+      values: |
+        privateNodes:
+          enabled: true
+          autoUpgrade:
+            enabled: false
+          kubelet:
+            config:
+              cgroupDriver: systemd
+        networking:
+          serviceCIDR: {{ $.Values.serviceCIDR }}
+          podCIDR: {{ $.Values.podCIDR }}
+        controlPlane:
+          endpoint: {{ .endpoint }}:443
+          distro:
+            k8s:
+              enabled: true
+              version: {{ $.Values.kubernetesVersion }}
+          service:
+            annotations:
+              metallb.io/address-pool: {{ .addressPool }}
+              metallb.io/loadBalancerIPs: {{ .endpoint }}
+            spec:
+              type: LoadBalancer
+              externalTrafficPolicy: Cluster
+          coredns:
+            enabled: true
+            overwriteConfig: |
+              {{- range .dnsForwards }}
+              {{ .zone }}:1053 {
+                  errors
+                  cache 30
+                  forward . {{ .to }}
+              }
+              {{- end }}
+              .:1053 {
+                  errors
+                  health {
+                     lameduck 5s
+                  }
+                  ready
+                  kubernetes cluster.local in-addr.arpa ip6.arpa {
+                     pods insecure
+                     fallthrough in-addr.arpa ip6.arpa
+                     ttl 30
+                  }
+                  prometheus :9153
+                  forward . /etc/resolv.conf {
+                     max_concurrent 1000
+                  }
+                  cache 30 {
+                     disable success cluster.local
+                     disable denial cluster.local
+                  }
+                  loop
+                  reload
+                  loadbalance
+              }
+          advanced:
+            cloudControllerManager:
+              enabled: false
+            konnectivity:
+              server:
+                enabled: false
+              agent:
+                enabled: false
+        deploy:
+          cni:
+            flannel:
+              enabled: false
+          kubeProxy:
+            enabled: true
+          localPathProvisioner:
+            enabled: false
+        exportKubeConfig:
+          additionalSecrets:
+            - name: {{ $.Values.kubeconfigSecret }}
+              namespace: {{ $.Values.namespace }}
+              context: dpu-cluster
+              server: https://{{ .endpoint }}:443
+{{- end }}

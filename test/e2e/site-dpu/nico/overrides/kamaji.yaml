@@ -1,4 +1,0 @@
-replicaCount: 1
-kamaji-etcd:
-  persistentVolumeClaim:
-    storageClassName: standard

@@ -32,8 +32,7 @@ Each cluster has a `nico/settings.yaml`. Anything else goes in `nico/overrides/<
 |---|---|
 | `dpfApiServerVip` | site API address the DPUs can reach |
 | `dpfApiServerPort` | `"6443"` |
-| `dpuClusterInterface` | `eth0` |
-| `dpuClusterVip` | a free address for the DPU cluster |
+| `dpuClusterMaxNodes` | `"1000"`, the most DPUs the DPU cluster takes |
 
 ## Site telemetry
 
@@ -47,5 +46,6 @@ Each cluster has a `nico/settings.yaml`. Anything else goes in `nico/overrides/<
 
 - `nico.yaml` (site): the NICo site config. Start from the example. `dhcp_servers` takes IP addresses, not names.
 - `nico-provider.yaml` (global): one entry per site.
+- `dpu-cluster.yaml` (global): one entry per DPU site. See [dpu-management.md](dpu-management.md).
 
 Helm replaces lists. If you add an issuer in `nico-rest.yaml`, keep the Platform issuer first.

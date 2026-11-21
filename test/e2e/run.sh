@@ -18,6 +18,7 @@ fi
 FLAGS=()
 [ "$ENV" = site-dpu ] && FLAGS=(--dpu)
 NICO_VAULT_TOKEN=$TOKEN "$ROOT/scripts/bootstrap-site-secrets.sh" --context "$CTX" "${FLAGS[@]}"
+[ "$ENV" = site-dpu ] && "$ROOT/test/e2e/dpu-cluster-standin.sh" "$CTX"
 
 flux create secret git gitops-auth -n flux-system --url="$GITOPS_URL" --username=x-access-token --password="$GIT_TOKEN"
 API_VIP=$(kubectl get endpoints kubernetes -n default -o jsonpath='{.subsets[0].addresses[0].ip}')

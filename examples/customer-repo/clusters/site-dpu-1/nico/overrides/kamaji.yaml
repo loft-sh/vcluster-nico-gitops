@@ -1,3 +1,0 @@
-kamaji-etcd:
-  persistentVolumeClaim:
-    storageClassName: local-path

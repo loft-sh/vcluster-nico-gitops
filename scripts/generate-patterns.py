@@ -22,7 +22,6 @@ REPOS = {
     "argo": "https://argoproj.github.io/argo-helm",
     "nfd": "https://kubernetes-sigs.github.io/node-feature-discovery/charts",
     "doca": "https://helm.ngc.nvidia.com/nvidia/doca",
-    "nvidia-charts": "oci://ghcr.io/nvidia/charts",
     "mellanox": "oci://ghcr.io/mellanox",
     "nico": "oci://ghcr.io/loft-sh/vcluster-platform-nico/charts",
     "hashicorp": "https://helm.releases.hashicorp.com",
@@ -52,6 +51,7 @@ COMPONENTS = {
                          {"kind": "PersistentVolumeClaim", "jsonPointers": ["/spec/storageClassName", "/spec/volumeName"]}], settings=[("platformHost", "config.loftHost")]),
         dict(name="nico-provider", gitops="./charts/nico-provider", ns="vcluster-platform",
              deps=["vcluster-platform", "nico-rest"], settings=[("nicoOrg", "org")]),
+        dict(name="dpu-cluster", gitops="./charts/dpu-cluster", ns="vcluster-platform", deps=["vcluster-platform"]),
     ],
     "site-vault": [
         dict(name="vault", repo=("hashicorp", "vault", V["vault"]["chart"]), ns="vault", defaults=True, disableWait=True,
@@ -69,20 +69,17 @@ COMPONENTS = {
     ],
     "site-dpu": [
         dict(name="argo-cd", repo=("argo", "argo-cd", V["dpf"]["argo-cd"]), ns="dpf-operator-system", defaults=True),
-        dict(name="kamaji", repo=("nvidia-charts", "kamaji", V["dpf"]["kamaji"]), ns="dpf-operator-system", deps=["cert-manager"],
-             defaults=True, disableWait=True),
-        dict(name="kamaji-datastore", gitops="./charts/kamaji-datastore", ns="dpf-operator-system", deps=["kamaji"],
-             wave_with="kamaji"),
         dict(name="maintenance-operator", repo=("mellanox", "maintenance-operator-chart", V["dpf"]["maintenance-operator"]), ns="dpf-operator-system",
              deps=["cert-manager"], defaults=True),
         dict(name="node-feature-discovery", repo=("nfd", "node-feature-discovery", V["dpf"]["node-feature-discovery"]), ns="dpf-operator-system",
              defaults=True),
         dict(name="dpf-operator", repo=("doca", "dpf-operator", V["dpf"]["operator"]), ns="dpf-operator-system", defaults=True,
-             deps=["argo-cd", "kamaji-datastore", "maintenance-operator", "node-feature-discovery"]),
+             deps=["argo-cd", "maintenance-operator", "node-feature-discovery"]),
         dict(name="dpf-config", gitops="./charts/dpf-config", ns="dpf-operator-system", deps=["dpf-operator"],
              settings=[("dpfApiServerVip", "apiServer.vip"), ("dpfApiServerPort", "apiServer.port"),
-                       ("dpuClusterInterface", "dpuCluster.keepalived.interface"),
-                       ("dpuClusterVip", "dpuCluster.keepalived.vip")]),
+                       ("dpuClusterMaxNodes", "dpuCluster.maxNodes")]),
+        dict(name="dpu-cluster-kubeconfig", gitops="./charts/dpu-cluster-kubeconfig", ns="dpf-operator-system",
+             deps=["dpf-config"]),
     ],
     "site": [
         dict(name="vcluster-platform-agent", repo=("loft", "vcluster-platform", V["vcluster-platform"]["chart"]), ns="vcluster-platform",
@@ -108,7 +105,7 @@ COMPONENTS = {
 }
 
 SCOPE_SOURCES = {"global": ["jetstack", "loft", "nico"], "site-vault": ["hashicorp"], "site-base": ["jetstack"],
-                 "site-dpu": ["argo", "nvidia-charts", "mellanox", "nfd", "doca"], "site": ["loft", "nico"],
+                 "site-dpu": ["argo", "mellanox", "nfd", "doca"], "site": ["loft", "nico"],
                  "site-telemetry": ["open-telemetry"]}
 SCOPE_TITLE = {"global": "global control plane", "site-vault": "NICo site in-cluster Vault", "site-base": "NICo site base layer",
                "site-dpu": "NICo site DPU management layer", "site": "NICo site",
@@ -269,11 +266,11 @@ PLATFORM_IMAGE_REF = {"registry": PLATFORM_REGISTRY, "repository": PLATFORM_REPO
 pin("values/global/vcluster-platform.yaml", [(["imageRef"], PLATFORM_IMAGE_REF)])
 pin("values/site/vcluster-platform-agent.yaml", [(["imageRef"], PLATFORM_IMAGE_REF)])
 pin("values/site-dpu/dpf-operator.yaml", [(["controllerManager", "image", "tag"], V["dpf"]["operator"])])
-pin("values/site-dpu/kamaji.yaml", [(["image", "tag"], V["dpf"]["kamaji-image"]), (["cfssl", "image", "tag"], V["dpf"]["cfssl"])])
 pin("charts/global-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
 pin("charts/site-prereqs/values.yaml", [(["postgres", "image"], f"postgres:{V['postgres']}")])
 pin("charts/temporal-namespaces/values.yaml", [(["adminToolsImage"], f"temporalio/admin-tools:{V['temporal-admin-tools']}")])
-pin("charts/kamaji-datastore/values.yaml", [(["kubectlImage"], f"alpine/k8s:{V['kubectl']}")])
+pin("charts/dpu-cluster/values.yaml", [(["chartVersion"], V["dpu-cluster"]["vcluster"]),
+                                       (["kubernetesVersion"], V["dpu-cluster"]["kubernetes"])])
 pin("charts/vault-unseal/values.yaml", [(["image"], f"alpine/k8s:{V['kubectl']}")])
 pin("values/site-vault/vault.yaml", [(["server", "image", "tag"], V["vault"]["image"])])
 pin("values/site-telemetry/site-relay.yaml", [(["image", "tag"], V["opentelemetry-collector"]["image"])])
